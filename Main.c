@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdio.h>
 #include "uci.h"
 
 int main(void) {
@@ -29,4 +28,6 @@ int main(void) {
         if (fgets(cmd, 1024, stdin) && uci_exec(cmd)) 
             return 0;
     }
+
+   return 0;
 }

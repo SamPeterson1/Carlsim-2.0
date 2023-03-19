@@ -97,6 +97,10 @@ typedef struct Board_s {
 #define NOT_FILE_1_MASK 0xFEFEFEFEFEFEFEFEULL
 #define NOT_FILE_8_MASK 0x7F7F7F7F7F7F7F7FULL
 
+#define BB_POP_COUNT(bb) __builtin_popcountll(bb)
+#define BB_GET_LSB(bb) __builtin_ctzll(bb)
+#define BB_POP_LSB(bb) __builtin_ctzll(bb); (bb) &= (bb) - 1
+
 void bd_clear(Board *board);
 
 static inline void bd_addPiece(Board *board, Piece piece, int square) {

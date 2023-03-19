@@ -57,13 +57,14 @@ long r_perft(Board *board, int depth, int originalDepth) {
 }
 
 int perft(Board *board, int depth) {
+    movesGenerated = 0;
     long startTime = micros();
     long numPositions = r_perft(board, depth, depth);
     long timeSpent = micros() - startTime;
 
     printf("Positions searched: %ld\n", numPositions);
     printf("Average move generation time: %f moves/sec\n", (double)movesGenerated/timeSpent*1.0E6);
-    //printf("Time spent: %f sec\n", timeSpent*1.0E-6);
+    printf("Time spent: %f sec\n", timeSpent*1.0E-6);
 
     return numPositions;
 }

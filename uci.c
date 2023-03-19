@@ -108,3 +108,11 @@ int uci_exec(char *cmd) {
 
     return 0;
 }
+
+void uci_perfTest() {
+    mg_init();
+    mv_init();
+
+    fen_load(&board, STARTING_FEN);
+    perft(&board, 6);
+}

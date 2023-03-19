@@ -111,20 +111,6 @@ MagicHashTable *diagonalMHTs[64];
 MagicHashTable *slidingPinMHTs[64];
 MagicHashTable *diagonalPinMHTs[64];
 
-static inline int popCount(uint64_t a) {
-    return __builtin_popcountll(a);
-}
-
-static inline int getLSB(uint64_t *a) {
-    return __builtin_ctzll(*a);
-}
-
-static inline int popLSB(uint64_t *a) {
-    int index = getLSB(a);
-    *a &= *a - 1;
-    return index;
-}
-
 void addMove(Bitboard *bitboard, int rank, int file) {
     if (rank >= 0 && rank < 8 && file >= 0 && file < 8)
         *bitboard |= (1ULL << SQUARE(rank, file));
@@ -391,11 +377,13 @@ int mg_genPseudoLegal(Board *board, Move *moves) {
 
     Bitboard knights = KNIGHTS(board, turn);
     while (knights) {
-        int origin = popLSB(&knights);
+        int origin = BB_POP_LSB(knights);
         Bitboard moveBitboard = knightMoves[origin] & ~board->colorBitboards[turn];
 
-        while (moveBitboard)
-            moves[movec ++] = CREATE_MOVE(origin, popLSB(&moveBitboard), QUIET); 
+        while (moveBitboard) {
+            int dest = BB_POP_LSB(moveBitboard);
+            moves[movec ++] = CREATE_MOVE(origin, dest, QUIET); 
+        }
     }
     
     Bitboard pawns = PAWNS(board, turn);
@@ -406,157 +394,145 @@ int mg_genPseudoLegal(Board *board, Move *moves) {
         pawns ^= pawnsOn7;
 
         Bitboard singlePushes = (pawns << 8) & ~board->bitboard;
-        Bitboard doublePushes = (singlePushes << 8) & ~board->bitboard & 0x00000000FF000000ULL;
-        Bitboard lCaptures = ((pawns & ~fileMasks[0]) << 7) & board->colorBitboards[BLACK];
-        Bitboard rCaptures = ((pawns & ~fileMasks[7]) << 9) & board->colorBitboards[BLACK];
-
-        Bitboard pushPromotions = (pawnsOn7 << 8) & ~board->bitboard;
-        Bitboard lPromotions = ((pawnsOn7 & ~fileMasks[0]) << 7) & board->colorBitboards[BLACK];
-        Bitboard rPromotions = ((pawnsOn7 & ~fileMasks[7]) << 9) & board->colorBitboards[BLACK];
+        Bitboard doublePushes = (singlePushes << 8) & ~board->bitboard & RANK_4_MASK;
+        Bitboard lCaptures = ((pawns & NOT_FILE_1_MASK) << 7) & board->colorBitboards[BLACK];
+        Bitboard rCaptures = ((pawns & NOT_FILE_8_MASK) << 9) & board->colorBitboards[BLACK];
 
         while (singlePushes) {
-            int dest = popLSB(&singlePushes);
+            int dest = BB_POP_LSB(singlePushes);
             moves[movec ++] = CREATE_MOVE(dest - 8, dest, QUIET);
         }
 
         while (doublePushes) {
-            int dest = popLSB(&doublePushes);
+            int dest = BB_POP_LSB(doublePushes);
             moves[movec ++] = CREATE_MOVE(dest - 16, dest, DOUBLE_PAWN_PUSH);
         }
 
         while (lCaptures) {
-            int dest = popLSB(&lCaptures);
+            int dest = BB_POP_LSB(lCaptures);
             moves[movec ++] = CREATE_MOVE(dest - 7, dest, QUIET);
         }
 
         while (rCaptures) {
-            int dest = popLSB(&rCaptures);
+            int dest = BB_POP_LSB(rCaptures);
             moves[movec ++] = CREATE_MOVE(dest - 9, dest, QUIET);
         }
 
-        while (pushPromotions) {
-            int dest = popLSB(&pushPromotions);
+        if (pawnsOn7) {
+            Bitboard pushPromotions = (pawnsOn7 << 8) & ~board->bitboard;
+            Bitboard lPromotions = ((pawnsOn7 & NOT_FILE_1_MASK) << 7) & board->colorBitboards[BLACK];
+            Bitboard rPromotions = ((pawnsOn7 & NOT_FILE_8_MASK) << 9) & board->colorBitboards[BLACK];
 
-            moves[movec ++] = CREATE_MOVE(dest - 8, dest, QUEEN_PROMOTION);
-            moves[movec ++] = CREATE_MOVE(dest - 8, dest, ROOK_PROMOTION);
-            moves[movec ++] = CREATE_MOVE(dest - 8, dest, BISHOP_PROMOTION);
-            moves[movec ++] = CREATE_MOVE(dest - 8, dest, KNIGHT_PROMOTION);
-        }
+            while (pushPromotions) {
+                int dest = BB_POP_LSB(pushPromotions);
+                CREATE_PROMOTIONS(moves, movec, dest - 8, dest);
+            }
 
-        while (lPromotions) {
-            int dest = popLSB(&lPromotions);
+            while (lPromotions) {
+                int dest = BB_POP_LSB(lPromotions);
+                CREATE_PROMOTIONS(moves, movec, dest - 7, dest);
+            }
 
-            moves[movec ++] = CREATE_MOVE(dest - 7, dest, QUEEN_PROMOTION);
-            moves[movec ++] = CREATE_MOVE(dest - 7, dest, ROOK_PROMOTION);
-            moves[movec ++] = CREATE_MOVE(dest - 7, dest, BISHOP_PROMOTION);
-            moves[movec ++] = CREATE_MOVE(dest - 7, dest, KNIGHT_PROMOTION);
-        }
-
-        while (rPromotions) {
-            int dest = popLSB(&rPromotions);
-
-            moves[movec ++] = CREATE_MOVE(dest - 9, dest, QUEEN_PROMOTION);
-            moves[movec ++] = CREATE_MOVE(dest - 9, dest, ROOK_PROMOTION);
-            moves[movec ++] = CREATE_MOVE(dest - 9, dest, BISHOP_PROMOTION);
-            moves[movec ++] = CREATE_MOVE(dest - 9, dest, KNIGHT_PROMOTION);
+            while (rPromotions) {
+                int dest = BB_POP_LSB(rPromotions);
+                CREATE_PROMOTIONS(moves, movec, dest - 9, dest);
+            }
         }
 
         if (epFile >= 0) {
             Bitboard epPawn = PAWNS(board, BLACK) & fileMasks[EP_FILE(board)] & RANK_5_MASK;
-            int epDest = __builtin_ctzll(epPawn << 8);
-            Bitboard epOrigins = (((epPawn & ~fileMasks[0]) >> 1) | ((epPawn & ~fileMasks[7]) << 1)) & PAWNS(board, WHITE);
+            int epDest = BB_GET_LSB(epPawn << 8);
+            Bitboard epOrigins = (((epPawn & NOT_FILE_1_MASK) >> 1) | ((epPawn & NOT_FILE_8_MASK) << 1)) & PAWNS(board, WHITE);
 
-            while (epOrigins)
-                moves[movec ++] = CREATE_MOVE(popLSB(&epOrigins), epDest, EP_CAPTURE);
+            while (epOrigins) {
+                int origin = BB_POP_LSB(epOrigins);
+                moves[movec ++] = CREATE_MOVE(origin, epDest, EP_CAPTURE);
+            }
         }
     } else if (turn == BLACK) {
         Bitboard pawnsOn2 = pawns & RANK_2_MASK;
         pawns ^= pawnsOn2;
 
         Bitboard singlePushes = (pawns >> 8) & ~board->bitboard;
-        Bitboard doublePushes = (singlePushes >> 8) & ~board->bitboard & 0x000000FF00000000ULL;
-        Bitboard lCaptures = ((pawns & ~fileMasks[7]) >> 7) & board->colorBitboards[WHITE];
-        Bitboard rCaptures = ((pawns & ~fileMasks[0]) >> 9) & board->colorBitboards[WHITE];
-        
-        Bitboard pushPromotions = (pawnsOn2 >> 8) & ~board->bitboard;
-        Bitboard lPromotions = ((pawnsOn2 & ~fileMasks[7]) >> 7) & board->colorBitboards[WHITE];
-        Bitboard rPromotions = ((pawnsOn2 & ~fileMasks[0]) >> 9) & board->colorBitboards[WHITE];
+        Bitboard doublePushes = (singlePushes >> 8) & ~board->bitboard & RANK_5_MASK;
+        Bitboard lCaptures = ((pawns & NOT_FILE_8_MASK) >> 7) & board->colorBitboards[WHITE];
+        Bitboard rCaptures = ((pawns & NOT_FILE_1_MASK) >> 9) & board->colorBitboards[WHITE];
 
         while (singlePushes) {
-            int dest = popLSB(&singlePushes);
+            int dest = BB_POP_LSB(singlePushes);
             moves[movec ++] = CREATE_MOVE(dest + 8, dest, QUIET);
         }
 
         while (doublePushes) {
-            int dest = popLSB(&doublePushes);
+            int dest = BB_POP_LSB(doublePushes);
             moves[movec ++] = CREATE_MOVE(dest + 16, dest, DOUBLE_PAWN_PUSH);
         }
 
         while (lCaptures) {
-            int dest = popLSB(&lCaptures);
+            int dest = BB_POP_LSB(lCaptures);
             moves[movec ++] = CREATE_MOVE(dest + 7, dest, QUIET);
         }
 
         while (rCaptures) {
-            int dest = popLSB(&rCaptures);
+            int dest = BB_POP_LSB(rCaptures);
             moves[movec ++] = CREATE_MOVE(dest + 9, dest, QUIET);
         }
 
-        while (pushPromotions) {
-            int dest = popLSB(&pushPromotions);
+        if (pawnsOn2) {
+            Bitboard pushPromotions = (pawnsOn2 >> 8) & ~board->bitboard;
+            Bitboard lPromotions = ((pawnsOn2 & NOT_FILE_8_MASK) >> 7) & board->colorBitboards[WHITE];
+            Bitboard rPromotions = ((pawnsOn2 & NOT_FILE_1_MASK) >> 9) & board->colorBitboards[WHITE];
 
-            moves[movec ++] = CREATE_MOVE(dest + 8, dest, QUEEN_PROMOTION);
-            moves[movec ++] = CREATE_MOVE(dest + 8, dest, ROOK_PROMOTION);
-            moves[movec ++] = CREATE_MOVE(dest + 8, dest, BISHOP_PROMOTION);
-            moves[movec ++] = CREATE_MOVE(dest + 8, dest, KNIGHT_PROMOTION);
-        }
+            while (pushPromotions) {
+                int dest = BB_POP_LSB(pushPromotions);
+                CREATE_PROMOTIONS(moves, movec, dest + 8, dest);
+            }
 
-        while (lPromotions) {
-            int dest = popLSB(&lPromotions);
+            while (lPromotions) {
+                int dest = BB_POP_LSB(lPromotions);
+                CREATE_PROMOTIONS(moves, movec, dest + 7, dest);
+            }
 
-            moves[movec ++] = CREATE_MOVE(dest + 7, dest, QUEEN_PROMOTION);
-            moves[movec ++] = CREATE_MOVE(dest + 7, dest, ROOK_PROMOTION);
-            moves[movec ++] = CREATE_MOVE(dest + 7, dest, BISHOP_PROMOTION);
-            moves[movec ++] = CREATE_MOVE(dest + 7, dest, KNIGHT_PROMOTION);
-        }
-
-        while (rPromotions) {
-            int dest = popLSB(&rPromotions);
-
-            moves[movec ++] = CREATE_MOVE(dest + 9, dest, QUEEN_PROMOTION);
-            moves[movec ++] = CREATE_MOVE(dest + 9, dest, ROOK_PROMOTION);
-            moves[movec ++] = CREATE_MOVE(dest + 9, dest, BISHOP_PROMOTION);
-            moves[movec ++] = CREATE_MOVE(dest + 9, dest, KNIGHT_PROMOTION);
+            while (rPromotions) {
+                int dest = BB_POP_LSB(rPromotions);
+                CREATE_PROMOTIONS(moves, movec, dest + 9, dest);
+            }
         }
 
         if (epFile >= 0) {
             Bitboard epPawn = PAWNS(board, WHITE) & fileMasks[EP_FILE(board)] & RANK_4_MASK;
-            int epDest = __builtin_ctzll(epPawn >> 8);
-            Bitboard epOrigins = (((epPawn & ~fileMasks[0]) >> 1) | ((epPawn & ~fileMasks[7]) << 1)) & PAWNS(board, BLACK);
+            int epDest = BB_GET_LSB(epPawn >> 8);
+            Bitboard epOrigins = (((epPawn & NOT_FILE_1_MASK) >> 1) | ((epPawn & NOT_FILE_8_MASK) << 1)) & PAWNS(board, BLACK);
 
-            while (epOrigins)
-                moves[movec ++] = CREATE_MOVE(popLSB(&epOrigins), epDest, EP_CAPTURE);
+            while (epOrigins) {
+                int origin = BB_POP_LSB(epOrigins);
+                moves[movec ++] = CREATE_MOVE(origin, epDest, EP_CAPTURE);
+            }
         }
     }
 
     Bitboard sliders = ROOKS(board, turn) | QUEENS(board, turn);
     while (sliders) {
-        int origin = popLSB(&sliders);
+        int origin = BB_POP_LSB(sliders);
         Bitboard blockers = slidingMoves[origin] & board->bitboard;
         Bitboard moveBitboard = MHT_GET_VALUE(slidingMHTs[origin], blockers) & ~board->colorBitboards[turn];
 
-        while (moveBitboard)
-            moves[movec ++] = CREATE_MOVE(origin, popLSB(&moveBitboard), QUIET);
+        while (moveBitboard) {
+            int dest = BB_POP_LSB(moveBitboard);
+            moves[movec ++] = CREATE_MOVE(origin, dest, QUIET);
+        }
     }
     
     Bitboard diagonals = BISHOPS(board, turn) | QUEENS(board, turn);
     while (diagonals) {
-        int origin = popLSB(&diagonals);
+        int origin = BB_POP_LSB(diagonals);
         Bitboard blockers = diagonalMoves[origin] & board->bitboard;
         Bitboard moveBitboard = MHT_GET_VALUE(diagonalMHTs[origin], blockers) & ~board->colorBitboards[turn];
 
-        while (moveBitboard)
-            moves[movec ++] = CREATE_MOVE(origin, popLSB(&moveBitboard), QUIET);
+        while (moveBitboard) {
+            int dest = BB_POP_LSB(moveBitboard);
+            moves[movec ++] = CREATE_MOVE(origin, dest, QUIET);
+        }
     }
 
     return movec;
@@ -567,10 +543,10 @@ int mg_genPseudoLegal(Board *board, Move *moves) {
 int mg_gen(Board *board, Move *moves) {
     int turn = TURN(board);
     int oppTurn = 1 - turn;
-
     int movec = 0;
+
     Bitboard king = KINGS(board, turn);
-    int kingPos = getLSB(&king);    
+    int kingPos = BB_GET_LSB(king);    
 
     Bitboard attackedSquares = 0;
     Bitboard withoutKing = board->bitboard ^ king;
@@ -585,13 +561,15 @@ int mg_gen(Board *board, Move *moves) {
     }
 
     Bitboard oppKnights = KNIGHTS(board, oppTurn);
-    while (oppKnights)
-        attackedSquares |= knightMoves[popLSB(&oppKnights)];
+    while (oppKnights) {
+        int square = BB_POP_LSB(oppKnights);
+        attackedSquares |= knightMoves[square];
+    }
     
     Bitboard oppSliders = ROOKS(board, oppTurn) | QUEENS(board, oppTurn);
     Bitboard slidingAttacks = 0;
     while (oppSliders) {
-        int square = popLSB(&oppSliders);
+        int square = BB_POP_LSB(oppSliders);
         Bitboard blockers = slidingMoves[square] & withoutKing;
         slidingAttacks |= MHT_GET_VALUE(slidingMHTs[square], blockers);
     }
@@ -601,7 +579,7 @@ int mg_gen(Board *board, Move *moves) {
     Bitboard oppDiagonals = BISHOPS(board, oppTurn) | QUEENS(board, oppTurn);
     Bitboard diagonalAttacks = 0;
     while (oppDiagonals) {
-        int square = popLSB(&oppDiagonals);
+        int square = BB_POP_LSB(oppDiagonals);
         Bitboard blockers = diagonalMoves[square] & withoutKing;
         diagonalAttacks |= MHT_GET_VALUE(diagonalMHTs[square], blockers);
     }
@@ -609,7 +587,7 @@ int mg_gen(Board *board, Move *moves) {
     oppDiagonals = BISHOPS(board, oppTurn) | QUEENS(board, oppTurn);
 
     attackedSquares |= (slidingAttacks | diagonalAttacks);
-    attackedSquares |= kingMoves[getLSB(&KINGS(board, oppTurn))];
+    attackedSquares |= kingMoves[BB_GET_LSB(KINGS(board, oppTurn))];
 
     Bitboard checkers = knightMoves[kingPos] & KNIGHTS(board, oppTurn);
     checkers |= pawnCaptures[turn][kingPos] & PAWNS(board, oppTurn);
@@ -618,17 +596,16 @@ int mg_gen(Board *board, Move *moves) {
     Bitboard slidingBlockers = slidingMoves[kingPos] & board->bitboard;
     checkers |= MHT_GET_VALUE(slidingMHTs[kingPos], slidingBlockers) & oppSliders;
     
-    int numCheckers = popCount(checkers);
-
-    if (numCheckers == 2) {
-        Bitboard legalMoves = kingMoves[kingPos] & ~attackedSquares & ~board->colorBitboards[turn];
-        while (legalMoves) {
-            int dest = popLSB(&legalMoves);
-            moves[movec ++] = CREATE_MOVE(kingPos, dest, QUIET);
-        }
-
-        return movec;
+    //Generate legal king moves - the king cannot move onto an attacked square or capture its own color piece
+    Bitboard legalKingMoves = kingMoves[kingPos] & ~attackedSquares & ~board->colorBitboards[turn];
+    while (legalKingMoves) {
+        int dest = BB_POP_LSB(legalKingMoves);
+        moves[movec ++] = CREATE_MOVE(kingPos, dest, QUIET);
     }
+
+    int numCheckers = BB_POP_COUNT(checkers);
+
+    if (numCheckers == 2) return movec;
     
 
     Move pseudoLegalMoves[MG_MAX_MOVES];
@@ -636,39 +613,35 @@ int mg_gen(Board *board, Move *moves) {
     
     Bitboard slidingPinnedPieces = 0;
     Bitboard xRaySlidingAttackers = oppSliders & MHT_GET_VALUE(slidingMHTs[kingPos], slidingMoves[kingPos] & board->colorBitboards[oppTurn]);
-    while (xRaySlidingAttackers)
-        slidingPinnedPieces |= pinRays[kingPos][popLSB(&xRaySlidingAttackers)];
+    while (xRaySlidingAttackers) {
+        int square = BB_POP_LSB(xRaySlidingAttackers);
+        slidingPinnedPieces |= pinRays[kingPos][square];
+    }
     
     slidingPinnedPieces = MHT_GET_VALUE(slidingPinMHTs[kingPos], slidingPinnedPieces & board->colorBitboards[turn]);
 
     Bitboard diagonalPinnedPieces = 0;
     Bitboard xRayDiagonalAttackers = oppDiagonals & MHT_GET_VALUE(diagonalMHTs[kingPos], diagonalMoves[kingPos] & board->colorBitboards[oppTurn]);
 
-    while (xRayDiagonalAttackers)
-        diagonalPinnedPieces |= pinRays[kingPos][popLSB(&xRayDiagonalAttackers)];
+    while (xRayDiagonalAttackers) {
+        int square = BB_POP_LSB(xRayDiagonalAttackers);
+        diagonalPinnedPieces |= pinRays[kingPos][square];
+    }
 
     diagonalPinnedPieces = MHT_GET_VALUE(diagonalPinMHTs[kingPos], diagonalPinnedPieces & board->colorBitboards[turn]);
     
     Bitboard pinnedPieces = slidingPinnedPieces | diagonalPinnedPieces;
 
     if(numCheckers == 1) {
+        Bitboard legalDests = 0;
         Bitboard rayChecker = checkers & (ROOKS(board, oppTurn) | BISHOPS(board, oppTurn) | QUEENS(board, oppTurn));
-        Bitboard legalMoves = (kingMoves[kingPos] & ~attackedSquares & ~board->colorBitboards[turn]);
 
-        if (rayChecker)
-            legalMoves &= ~fullRays[kingPos][getLSB(&rayChecker)] | rayChecker;
-        
-        while (legalMoves) {
-            int dest = popLSB(&legalMoves);
-            moves[movec ++] = CREATE_MOVE(kingPos, dest, QUIET);
-        }
-               
-        legalMoves = checkers & (PAWNS(board, oppTurn) | KNIGHTS(board, oppTurn));
-        
         if (rayChecker) {
-            int checkerPos = getLSB(&rayChecker);
-            legalMoves = pinRays[kingPos][checkerPos];
-        }
+            int checkerPos = BB_GET_LSB(rayChecker);
+            legalDests = pinRays[kingPos][checkerPos];
+        } else {
+            legalDests = checkers & (PAWNS(board, oppTurn) | KNIGHTS(board, oppTurn));
+        } 
 
         for (int i = 0; i < numPseudoLegal; i ++) {
             Move move = pseudoLegalMoves[i];
@@ -690,9 +663,8 @@ int mg_gen(Board *board, Move *moves) {
                         moves[movec ++] = move;
                 }
             } else {
-                Bitboard pinRay = fullRays[kingPos][origin];
-
-                if (GET_BIT(legalMoves, dest) && ((GET_BIT(pinnedPieces, origin) ^ 1) | GET_BIT(pinRay, dest)))
+                //Legal if the destination is legal and the piece is either not pinned or moves along the pin ray
+                if ((legalDests & (1ULL << dest)) != 0 && ((pinnedPieces & (1ULL << origin)) == 0 || (fullRays[kingPos][origin] & (1ULL << dest)) != 0))
                     moves[movec ++] = move;
             }
         }
@@ -701,7 +673,6 @@ int mg_gen(Board *board, Move *moves) {
     }
 
     for (int i = 0; i < numPseudoLegal; i ++) {
-        int legal = 1;
         Move move = pseudoLegalMoves[i];
         int origin = MOVE_ORIGIN(move);
         int dest = MOVE_DEST(move);
@@ -715,21 +686,13 @@ int mg_gen(Board *board, Move *moves) {
             Bitboard discoveredCheckers = oppDiagonals & MHT_GET_VALUE(diagonalMHTs[kingPos], diagonalMoves[kingPos] & blockers);
             discoveredCheckers |= oppSliders & MHT_GET_VALUE(slidingMHTs[kingPos], slidingMoves[kingPos] & blockers);
 
-            legal = (discoveredCheckers == 0);
+            if (discoveredCheckers == 0)
+                moves[movec ++] = move;
         } else {
-            Bitboard pinRay = fullRays[kingPos][origin];
-            legal &= ~GET_BIT(pinnedPieces, origin) | GET_BIT(pinRay, dest);
+            //Legal if the piece is either not pinned or moves along the pin ray
+            if ((pinnedPieces & (1ULL << origin)) == 0 || (fullRays[kingPos][origin] & (1ULL << dest)) != 0)
+                moves[movec ++] = move;
         }
-
-        if (legal)
-            moves[movec ++] = move;
-    }
-
-    //generate king moves
-    Bitboard legalMoves = kingMoves[kingPos] & ~attackedSquares & ~board->colorBitboards[turn];
-    while (legalMoves) {
-        int dest = popLSB(&legalMoves);
-        moves[movec ++] = CREATE_MOVE(kingPos, dest, QUIET);
     }
 
     if(numCheckers == 0) {
@@ -749,3 +712,4 @@ int mg_gen(Board *board, Move *moves) {
 
     return movec;
 }
+

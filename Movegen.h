@@ -32,6 +32,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define BLACK_QUEENSIDE_CASTLE_MASK 0xC00000000000000ULL
 #define BLACK_KINGSIDE_CASTLE_MASK 0x6000000000000000ULL
 
+#define CREATE_PROMOTIONS(moves, movec, origin, dest) Move move = CREATE_MOVE((origin), (dest), QUIET); moves[(movec) ++] = move | QUEEN_PROMOTION; moves[(movec) ++] = move | ROOK_PROMOTION; moves[(movec) ++] = move | BISHOP_PROMOTION; moves[(movec) ++] = move | KNIGHT_PROMOTION
+
 #define NORTH 0
 #define NORTHEAST 1
 #define EAST 2

@@ -29,5 +29,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 
 int uci_exec(char *cmd);
+void uci_perfTest(void);
 
 #endif
