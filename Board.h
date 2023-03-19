@@ -94,6 +94,9 @@ typedef struct Board_s {
 #define RANK_4_MASK 0xFF000000ULL
 #define RANK_2_MASK 0xFF00ULL
 
+#define NOT_FILE_1_MASK 0xFEFEFEFEFEFEFEFEULL
+#define NOT_FILE_8_MASK 0x7F7F7F7F7F7F7F7FULL
+
 void bd_clear(Board *board);
 
 static inline void bd_addPiece(Board *board, Piece piece, int square) {
