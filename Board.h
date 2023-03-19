@@ -35,7 +35,7 @@ typedef struct Board_s {
 
     Piece pieces[64];
 
-    Bitboard pieceBitboards[6][2];
+    Bitboard pieceBitboards[12];
     Bitboard bitboard;
     Bitboard colorBitboards[2];
 } Board;
@@ -53,18 +53,17 @@ typedef struct Board_s {
 
 #define TURN(board) (((board)->gameState >> 8) & 1)
 
-#define PAWNS(board, turn) (board)->pieceBitboards[PAWN][turn]
-#define KNIGHTS(board, turn) (board)->pieceBitboards[KNIGHT][turn]
-#define BISHOPS(board, turn) (board)->pieceBitboards[BISHOP][turn]
-#define ROOKS(board, turn) (board)->pieceBitboards[ROOK][turn]
-#define QUEENS(board, turn) (board)->pieceBitboards[QUEEN][turn]
-#define KINGS(board, turn) (board)->pieceBitboards[KING][turn]
+#define PAWNS(board, turn) (board)->pieceBitboards[PAWN | turn]
+#define KNIGHTS(board, turn) (board)->pieceBitboards[KNIGHT | turn]
+#define BISHOPS(board, turn) (board)->pieceBitboards[BISHOP | turn]
+#define ROOKS(board, turn) (board)->pieceBitboards[ROOK | turn]
+#define QUEENS(board, turn) (board)->pieceBitboards[QUEEN | turn]
+#define KINGS(board, turn) (board)->pieceBitboards[KING | turn]
 
-#define PIECE_BITBOARD(board, piece) board->pieceBitboards[PIECE_TYPE(piece)][PIECE_COLOR(piece)]
+#define PIECE_BITBOARD(board, piece) board->pieceBitboards[piece]
 #define COLOR_BITBOARD(board, piece) board->colorBitboards[PIECE_COLOR(piece)]
 
 #define SET_TURN(board, turn) (board)->gameState = (((board)->gameState & 0xFEFF) | (turn << 8))
-#define OPP_TURN(board) (1 - TURN(board))
 #define HAS_CASTLE_RIGHT(board, castle) (((board)->gameState & castle) == castle)
 #define EP_FILE(board) ((((board)->gameState >> 4) & 0x0F) - 1)
 #define HALFMOVE_COUNTER(board) ((board)->gameState >> 9)
@@ -96,11 +95,44 @@ typedef struct Board_s {
 #define RANK_2_MASK 0xFF00ULL
 
 void bd_clear(Board *board);
-void bd_addPiece(Board *board, Piece piece, int square);
-void bd_movePiece(Board *board, int origin, int dest);
-void bd_clearPiece(Board *board, int square);
+
+static inline void bd_addPiece(Board *board, Piece piece, int square) {
+    Bitboard position = (1ULL << square);
+
+    board->bitboard |= position;
+    PIECE_BITBOARD(board, piece) |= position;
+    COLOR_BITBOARD(board, piece) |= position;
+
+    board->pieces[square] = piece;
+}
+
+static inline void bd_movePiece(Board *board, int origin, int dest) {
+    Piece piece = board->pieces[origin];
+    Bitboard move = (1ULL << origin) | (1ULL << dest);
+
+    board->bitboard ^= move;
+    PIECE_BITBOARD(board, piece) ^= move;
+    COLOR_BITBOARD(board, piece) ^= move;
+
+    board->pieces[origin] = PIECE_NONE;
+    board->pieces[dest] = piece;
+}
+
+static inline void bd_clearPiece(Board *board, int square) {
+    Piece piece = board->pieces[square];
+    if (piece == PIECE_NONE) return;
+
+    Bitboard mask = 1ULL << square;
+
+    board->bitboard ^= mask;
+    PIECE_BITBOARD(board, piece) ^= mask;
+    COLOR_BITBOARD(board, piece) ^= mask;
+
+    board->pieces[square] = PIECE_NONE;
+}
 
 void bd_print(Board *board);
+void bd_printInfo(Board *board);
 
 void bd_squareToStr(int square, char *str);
 

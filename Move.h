@@ -57,9 +57,208 @@ typedef struct MoveResult_s {
     Move move;
 } MoveResult;
 
+uint16_t castleRightMasks[64];
+
 Move mv_fromLAN(Board *board, char *str);
 void mv_toLAN(Move move, char *str);
-void mv_make(Move move, Board *board);
-void mv_unmake(MoveResult *result, Board *board);
+void mv_init(void);
+
+/*
+static inline void mv_make(Move move, Board *board) {
+    int origin = MOVE_ORIGIN(move);
+    int dest = MOVE_DEST(move);
+    int special = MOVE_SPECIAL(move);
+
+    SET_EP_FILE(board, -1);
+
+    if (special == QUIET) {
+        bd_clearPiece(board, dest);
+        bd_movePiece(board, origin, dest);
+    } else if (special == DOUBLE_PAWN_PUSH) {
+        SET_EP_FILE(board, FILE(origin));
+        bd_movePiece(board, origin, dest);
+    } else if (special == EP_CAPTURE) {
+        bd_clearPiece(board, SQUARE(RANK(origin), EP_FILE(board)));
+        bd_movePiece(board, origin, dest);
+    } else if(special == KINGSIDE_CASTLE) {
+        if(TURN(board) == WHITE) {
+            bd_movePiece(board, 7, 5);
+            REMOVE_CASTLE_RIGHT(board, WHITE_CASTLE_KINGSIDE_RIGHT | WHITE_CASTLE_QUEENSIDE_RIGHT);
+        } else {
+            bd_movePiece(board, 63, 61);
+            REMOVE_CASTLE_RIGHT(board, BLACK_CASTLE_KINGSIDE_RIGHT | BLACK_CASTLE_QUEENSIDE_RIGHT);
+        } 
+
+        bd_movePiece(board, origin, dest);
+    } else if(special == QUEENSIDE_CASTLE) {
+        if(TURN(board) == WHITE) {
+            bd_movePiece(board, 0, 3);
+            REMOVE_CASTLE_RIGHT(board, WHITE_CASTLE_KINGSIDE_RIGHT | WHITE_CASTLE_QUEENSIDE_RIGHT);
+        } else {
+            bd_movePiece(board, 56, 59);
+            REMOVE_CASTLE_RIGHT(board, BLACK_CASTLE_KINGSIDE_RIGHT | BLACK_CASTLE_QUEENSIDE_RIGHT);
+        }
+
+        bd_movePiece(board, origin, dest);
+    } else if(special == KNIGHT_PROMOTION) {
+        //maybe add function to clear multiple pieces
+        bd_clearPiece(board, dest);
+        bd_clearPiece(board, origin);
+        bd_addPiece(board, TURN(board) | KNIGHT, dest);
+    } else if(special == BISHOP_PROMOTION) {
+        bd_clearPiece(board, dest);
+        bd_clearPiece(board, origin);
+        bd_addPiece(board, TURN(board) | BISHOP, dest);
+    } else if(special == ROOK_PROMOTION) {
+        bd_clearPiece(board, dest);
+        bd_clearPiece(board, origin);
+        bd_addPiece(board, TURN(board) | ROOK, dest);
+    } else if(special == QUEEN_PROMOTION) {
+        bd_clearPiece(board, dest);
+        bd_clearPiece(board, origin);
+        bd_addPiece(board, TURN(board) | QUEEN, dest);
+    }
+
+    //board->gameState &= castleRightMasks[origin] & castleRightMasks[dest];
+
+    CHANGE_TURN(board);
+}
+
+static inline void mv_unmake(MoveResult *result, Board *board) {
+    int origin = MOVE_ORIGIN(result->move);
+    int dest = MOVE_DEST(result->move);
+    int special = MOVE_SPECIAL(result->move);
+
+    board->gameState = result->prevGameState;
+
+    int turn = TURN(board);
+    
+    if (special == EP_CAPTURE) {
+        bd_movePiece(board, dest, origin);
+        bd_addPiece(board, PAWN | (1 - turn), SQUARE(RANK(origin), EP_FILE(board)));
+    } else if(special == KINGSIDE_CASTLE) {
+        bd_movePiece(board, dest, origin);
+        if(turn == WHITE) {
+            bd_movePiece(board, 5, 7);
+        } else {
+            bd_movePiece(board, 61, 63);
+        }  
+    } else if(special == QUEENSIDE_CASTLE) {
+        bd_movePiece(board, dest, origin);
+        if(turn == WHITE) {
+            bd_movePiece(board, 3, 0);
+        } else {
+            bd_movePiece(board, 59, 56);
+        }
+    } else if(MOVE_IS_PROMOTION(result->move)) {
+        bd_clearPiece(board, dest);
+        bd_addPiece(board, PAWN | turn, origin);
+        if (result->captured != PIECE_NONE) bd_addPiece(board, result->captured, dest);
+    } else {
+        bd_movePiece(board, dest, origin);
+        if (result->captured != PIECE_NONE) bd_addPiece(board, result->captured, dest);
+    }
+}
+*/
+
+static inline void mv_make(Move move, Board *board) {
+
+    int origin = MOVE_ORIGIN(move);
+    int dest = MOVE_DEST(move);
+    int special = MOVE_SPECIAL(move);
+    int epFile = EP_FILE(board);
+    int turn = TURN(board);
+    SET_EP_FILE(board, -1);
+
+    if (MOVE_SPECIAL(move) == DOUBLE_PAWN_PUSH) {
+        SET_EP_FILE(board, FILE(origin));
+
+        bd_movePiece(board, origin, dest);
+    } else if (special == EP_CAPTURE) {
+        bd_clearPiece(board, SQUARE(RANK(origin), epFile));
+        bd_movePiece(board, origin, dest);
+    } else if(special == KINGSIDE_CASTLE) {
+        if(turn == WHITE) {
+            bd_movePiece(board, 7, 5);
+            REMOVE_CASTLE_RIGHT(board, WHITE_CASTLE_KINGSIDE_RIGHT | WHITE_CASTLE_QUEENSIDE_RIGHT);
+        } else {
+            bd_movePiece(board, 63, 61);
+            REMOVE_CASTLE_RIGHT(board, BLACK_CASTLE_KINGSIDE_RIGHT | BLACK_CASTLE_QUEENSIDE_RIGHT);
+        } 
+
+        bd_movePiece(board, origin, dest);
+    } else if(special == QUEENSIDE_CASTLE) {
+        if(turn == WHITE) {
+            bd_movePiece(board, 0, 3);
+            REMOVE_CASTLE_RIGHT(board, WHITE_CASTLE_KINGSIDE_RIGHT | WHITE_CASTLE_QUEENSIDE_RIGHT);
+        } else {
+            bd_movePiece(board, 56, 59);
+            REMOVE_CASTLE_RIGHT(board, BLACK_CASTLE_KINGSIDE_RIGHT | BLACK_CASTLE_QUEENSIDE_RIGHT);
+        }
+
+        bd_movePiece(board, origin, dest);
+    } else if(special == KNIGHT_PROMOTION) {
+        //maybe add function to clear multiple pieces
+        bd_clearPiece(board, dest);
+        bd_clearPiece(board, origin);
+        bd_addPiece(board, turn | KNIGHT, dest);
+    } else if(special == BISHOP_PROMOTION) {
+        bd_clearPiece(board, dest);
+        bd_clearPiece(board, origin);
+        bd_addPiece(board, turn | BISHOP, dest);
+    } else if(special == ROOK_PROMOTION) {
+        bd_clearPiece(board, dest);
+        bd_clearPiece(board, origin);
+        bd_addPiece(board, turn | ROOK, dest);
+    } else if(special == QUEEN_PROMOTION) {
+        bd_clearPiece(board, dest);
+        bd_clearPiece(board, origin);
+        bd_addPiece(board, turn | QUEEN, dest);
+    } else {
+        bd_clearPiece(board, dest);
+        bd_movePiece(board, origin, dest);
+    }
+
+    board->gameState &= castleRightMasks[origin] & castleRightMasks[dest];
+
+    CHANGE_TURN(board);
+
+}
+
+static inline void mv_unmake(MoveResult *result, Board *board) {
+    int origin = MOVE_ORIGIN(result->move);
+    int dest = MOVE_DEST(result->move);
+    int special = MOVE_SPECIAL(result->move);
+
+    board->gameState = result->prevGameState;
+
+    int turn = TURN(board);
+    
+    if (special == EP_CAPTURE) {
+        bd_movePiece(board, dest, origin);
+        bd_addPiece(board, (1 - TURN(board)) | PAWN, SQUARE(RANK(origin), EP_FILE(board)));
+    } else if(special == KINGSIDE_CASTLE) {
+        bd_movePiece(board, dest, origin);
+        if(turn == WHITE) {
+            bd_movePiece(board, 5, 7);
+        } else {
+            bd_movePiece(board, 61, 63);
+        }  
+    } else if(special == QUEENSIDE_CASTLE) {
+        bd_movePiece(board, dest, origin);
+        if(turn == WHITE) {
+            bd_movePiece(board, 3, 0);
+        } else {
+            bd_movePiece(board, 59, 56);
+        }
+    } else if(MOVE_IS_PROMOTION(result->move)) {
+        bd_clearPiece(board, dest);
+        bd_addPiece(board, turn | PAWN, origin);
+        if (result->captured != PIECE_NONE) bd_addPiece(board, result->captured, dest);
+    } else {
+        bd_movePiece(board, dest, origin);
+        if (result->captured != PIECE_NONE) bd_addPiece(board, result->captured, dest);
+    }
+}
 
 #endif

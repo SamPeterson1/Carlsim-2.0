@@ -19,8 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Perft.h"
 #include <sys/time.h>
 
-unsigned long totalTime = 0;
-long totalMoves = 0;
+long movesGenerated = 0;
 
 unsigned long micros(void) {
     struct timeval tv;
@@ -29,12 +28,9 @@ unsigned long micros(void) {
 }
 
 long r_perft(Board *board, int depth, int originalDepth) {
-
     Move moves[MG_MAX_MOVES];
-    unsigned long foo = micros();
     int movec = mg_gen(board, moves);
-    totalTime += micros() - foo;
-    totalMoves += movec;
+    movesGenerated += movec;
 
     if (depth == 1) 
         return movec;
@@ -61,8 +57,13 @@ long r_perft(Board *board, int depth, int originalDepth) {
 }
 
 int perft(Board *board, int depth) {
+    long startTime = micros();
     long numPositions = r_perft(board, depth, depth);
+    long timeSpent = micros() - startTime;
+
     printf("Positions searched: %ld\n", numPositions);
-    printf("Average move generation time: %f moves/sec\n", (double)totalMoves/totalTime*1.0E6);
+    printf("Average move generation time: %f moves/sec\n", (double)movesGenerated/timeSpent*1.0E6);
+    //printf("Time spent: %f sec\n", timeSpent*1.0E-6);
+
     return numPositions;
 }

@@ -388,7 +388,6 @@ void mg_init(void) {
 int mg_genPseudoLegal(Board *board, Move *moves) {
     int movec = 0;
     int turn = TURN(board);
-    int oppTurn = OPP_TURN(board);
 
     Bitboard knights = KNIGHTS(board, turn);
     while (knights) {
@@ -570,8 +569,6 @@ int mg_genPseudoLegal(Board *board, Move *moves) {
 
     return movec;
 }
-
-//IMPORTANT!!!! FIX EP ISSUE WHEN 2 PAWNS ON SAME FILE
 
 //maybe handle king moves in here instead of in pseudo legal
 int mg_gen(Board *board, Move *moves) {

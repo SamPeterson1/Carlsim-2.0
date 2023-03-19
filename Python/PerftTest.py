@@ -31,7 +31,7 @@ def setup_position(cur_moves, position):
 def carlsim_perft(depth, cur_moves, position):
     input = 'isready\n' + setup_position(cur_moves, position) + '\nperft ' + str(depth) + '\nquit\n'
 
-    p = subprocess.run(['../carlsim'], input=input, capture_output=True, text=True)
+    p = subprocess.run(['../carlsim.out'], input=input, capture_output=True, text=True)
 
     lines = p.stdout.splitlines()
     result = lines[-2].split(" ")[2]
@@ -138,7 +138,7 @@ testPositions = [
 
 print("Building...")
 os.chdir(os.path.join(os.path.abspath(os.path.curdir),u'..'))
-p = subprocess.run(['./build'], capture_output=True)
+p = subprocess.run(['./build.sh'], capture_output=True)
 os.chdir(os.path.join(os.path.abspath(os.path.curdir),u'Python/'))
 print(p.stderr)
 

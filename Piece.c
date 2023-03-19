@@ -45,7 +45,7 @@ Piece pc_parse(char c) {
 
     int color = (c < 97) ? WHITE : BLACK;
 
-    return CREATE_PIECE(color, type);
+    return color | type;
 }
 
 char pc_toChar(Piece piece) {

@@ -30,6 +30,7 @@ void cmd_uci(void) {
 void cmd_isready(void) {
     if (!hasInitialized) {
         mg_init();
+        mv_init();
         hasInitialized = TRUE;
     }
 

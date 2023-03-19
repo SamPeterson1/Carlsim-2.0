@@ -27,15 +27,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define BLACK 1
 
 #define PAWN 0
-#define KNIGHT 1
-#define BISHOP 2
-#define ROOK 3
-#define QUEEN 4
-#define KING 5
+#define KNIGHT 2
+#define BISHOP 4
+#define ROOK 6
+#define QUEEN 8
+#define KING 10
 
 #define PIECE_NONE 255
 
-#define CREATE_PIECE(color, type) ((color) | (type << 1))
 #define PIECE_TYPE(piece) ((piece) >> 1)
 #define PIECE_COLOR(piece) ((piece) & 1)
 
