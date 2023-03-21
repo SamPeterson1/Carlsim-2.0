@@ -41,7 +41,10 @@ long r_perft(Board *board, int depth, int originalDepth) {
         MoveResult result = MOVE_RESULT(moves[i], board);
 
         mv_make(moves[i], board);
-        long n = r_perft(board, depth - 1, originalDepth);
+
+        long n = 0;
+
+        n = r_perft(board, depth - 1, originalDepth);
 
         if (depth == originalDepth) {
             char str[LAN_MAX_SIZE];
@@ -64,7 +67,7 @@ int perft(Board *board, int depth) {
 
     printf("Positions searched: %ld\n", numPositions);
     printf("Average move generation time: %f moves/sec\n", (double)movesGenerated/timeSpent*1.0E6);
-    printf("Time spent: %f sec\n", timeSpent*1.0E-6);
+    //printf("Time spent: %f sec\n", timeSpent*1.0E-6);
 
     return numPositions;
 }

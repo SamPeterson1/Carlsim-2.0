@@ -33,9 +33,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define QUEEN 8
 #define KING 10
 
+#define WHITE_PAWN 0
+#define BLACK_PAWN 1
+#define WHITE_KNIGHT 2
+#define BLACK_KNIGHT 3
+#define WHITE_BISHOP 4
+#define BLACK_BISHOP 5
+#define WHITE_ROOK 6
+#define BLACK_ROOK 7
+#define WHITE_QUEEN 8
+#define BLACK_QUEEN 9
+#define WHITE_KING 10
+#define BLACK_KING 11
+
 #define PIECE_NONE 255
 
-#define PIECE_TYPE(piece) ((piece) >> 1)
+#define PIECE_TYPE(piece) ((piece) & 0xFE)
 #define PIECE_COLOR(piece) ((piece) & 1)
 
 typedef uint8_t Piece;

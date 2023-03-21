@@ -51,6 +51,9 @@ typedef struct Board_s {
 #define BLACK_CASTLE_QUEENSIDE_RIGHT 0x04
 #define BLACK_CASTLE_KINGSIDE_RIGHT 0x08
 
+#define WHITE_CASTLE_RIGHT (WHITE_CASTLE_KINGSIDE_RIGHT | WHITE_CASTLE_QUEENSIDE_RIGHT)
+#define BLACK_CASTLE_RIGHT (BLACK_CASTLE_KINGSIDE_RIGHT | BLACK_CASTLE_QUEENSIDE_RIGHT)
+
 #define TURN(board) (((board)->gameState >> 8) & 1)
 
 #define PAWNS(board, turn) (board)->pieceBitboards[PAWN | turn]
@@ -70,6 +73,7 @@ typedef struct Board_s {
 
 #define SET_HALFMOVE_COUNTER(board, counter) ((board)->gameState = ((board)->gameState & 0x1FF) | ((counter) << 9))
 #define SET_EP_FILE(board, epFile) (board)->gameState = ((board)->gameState & 0xFF0F) | (((epFile + 1) << 4))
+#define CLEAR_EP_FILE(board) (board)->gameState &= 0xFF0F
 #define REMOVE_CASTLE_RIGHT(board, castle) (board)->gameState &= ~(castle)
 #define GIVE_CASTLE_RIGHT(board, castle) (board)->gameState |= (castle)
 #define CHANGE_TURN(board) ((board)->gameState ^= 0x100)
@@ -100,6 +104,9 @@ typedef struct Board_s {
 #define BB_POP_COUNT(bb) __builtin_popcountll(bb)
 #define BB_GET_LSB(bb) __builtin_ctzll(bb)
 #define BB_POP_LSB(bb) __builtin_ctzll(bb); (bb) &= (bb) - 1
+
+#define SQUARE_24 0x1000000ULL
+#define SQUARE_32 0x100000000ULL
 
 void bd_clear(Board *board);
 
