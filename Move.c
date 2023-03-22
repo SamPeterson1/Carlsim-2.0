@@ -18,6 +18,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Move.h"
 
+const Piece promotionLookupsWhite[16] = {
+    PIECE_NONE, PIECE_NONE, PIECE_NONE, PIECE_NONE, PIECE_NONE, PIECE_NONE, PIECE_NONE, PIECE_NONE, //0-7
+    WHITE_KNIGHT, //8 (0x8)
+    WHITE_BISHOP, //9 (0x9)
+    WHITE_ROOK, //10 (0xA)
+    WHITE_QUEEN, //11 (0xB)
+    PIECE_NONE, PIECE_NONE, PIECE_NONE, PIECE_NONE //12-15
+};
+
+const Piece promotionLookupsBlack[16] = {
+    PIECE_NONE, PIECE_NONE, PIECE_NONE, PIECE_NONE, PIECE_NONE, PIECE_NONE, PIECE_NONE, PIECE_NONE, //0-7
+    BLACK_KNIGHT, //8 (0x8)
+    BLACK_BISHOP, //9 (0x9)
+    BLACK_ROOK, //10 (0xA)
+    BLACK_QUEEN, //11 (0xB)
+    PIECE_NONE, PIECE_NONE, PIECE_NONE, PIECE_NONE //12-15
+};
+
 void mv_init(void) {
     for (int square = 0; square < 64; square ++) {
         uint16_t revokedRights = 0;

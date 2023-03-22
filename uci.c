@@ -63,14 +63,21 @@ void cmd_position(char **args, int argc) {
     }
 
     if (nextArg < argc && strcmp(args[nextArg], "moves") == 0) {
-        for (int i = nextArg + 1; i < argc; i ++)
-            mv_make(mv_fromLAN(&board, args[i]), &board);
+        for (int i = nextArg + 1; i < argc; i ++) {
+            if (TURN(&board) == WHITE)
+                mv_makeWhite(mv_fromLAN(&board, args[i]), &board);
+            else
+                mv_makeBlack(mv_fromLAN(&board, args[i]), &board);
+        }
     }
 }
 
 void cmd_move(char** args) {
     Move move = mv_fromLAN(&board, args[1]);
-    mv_make(move, &board);
+    if (TURN(&board) == WHITE)
+        mv_makeWhite(move, &board);
+    else
+        mv_makeBlack(move, &board);
 }
 
 void cmd_perft(char **args) {

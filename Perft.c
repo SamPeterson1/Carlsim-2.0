@@ -27,7 +27,7 @@ unsigned long micros(void) {
     return 1000000 * tv.tv_sec + tv.tv_usec;
 }
 
-long r_perft(Board *board, int depth, int originalDepth) {
+long r_perftWhite(Board *board, int depth, int originalDepth) {
     Move moves[MG_MAX_MOVES];
     int movec = mg_gen(board, moves);
     movesGenerated += movec;
@@ -40,11 +40,11 @@ long r_perft(Board *board, int depth, int originalDepth) {
     for (int i = 0; i < movec; i ++) {
         MoveResult result = MOVE_RESULT(moves[i], board);
 
-        mv_make(moves[i], board);
+        mv_makeWhite(moves[i], board);
 
         long n = 0;
 
-        n = r_perft(board, depth - 1, originalDepth);
+        n = r_perftBlack(board, depth - 1, originalDepth);
 
         if (depth == originalDepth) {
             char str[LAN_MAX_SIZE];
@@ -53,7 +53,39 @@ long r_perft(Board *board, int depth, int originalDepth) {
         }
 
         numPositions += n;
-        mv_unmake(&result, board);
+        mv_unmakeWhite(&result, board);
+    }
+
+    return numPositions;
+}
+
+long r_perftBlack(Board *board, int depth, int originalDepth) {
+    Move moves[MG_MAX_MOVES];
+    int movec = mg_gen(board, moves);
+    movesGenerated += movec;
+
+    if (depth == 1) 
+        return movec;
+
+    long numPositions = 0;
+
+    for (int i = 0; i < movec; i ++) {
+        MoveResult result = MOVE_RESULT(moves[i], board);
+
+        mv_makeBlack(moves[i], board);
+
+        long n = 0;
+
+        n = r_perftWhite(board, depth - 1, originalDepth);
+
+        if (depth == originalDepth) {
+            char str[LAN_MAX_SIZE];
+            mv_toLAN(moves[i], str);
+            printf("%s: %ld\n", str, n);
+        }
+
+        numPositions += n;
+        mv_unmakeBlack(&result, board);
     }
 
     return numPositions;
@@ -61,8 +93,9 @@ long r_perft(Board *board, int depth, int originalDepth) {
 
 int perft(Board *board, int depth) {
     movesGenerated = 0;
+
     long startTime = micros();
-    long numPositions = r_perft(board, depth, depth);
+    long numPositions = (TURN(board) == WHITE) ? r_perftWhite(board, depth, depth) : r_perftBlack(board, depth, depth);
     long timeSpent = micros() - startTime;
 
     printf("Positions searched: %ld\n", numPositions);
