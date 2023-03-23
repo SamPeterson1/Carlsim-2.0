@@ -101,12 +101,16 @@ typedef struct Board_s {
 #define NOT_FILE_1_MASK 0xFEFEFEFEFEFEFEFEULL
 #define NOT_FILE_8_MASK 0x7F7F7F7F7F7F7F7FULL
 
+#define BB_FULL_BOARD 0xFFFFFFFFFFFFFFFFULL
+
 #define BB_POP_COUNT(bb) __builtin_popcountll(bb)
 #define BB_GET_LSB(bb) __builtin_ctzll(bb)
 #define BB_POP_LSB(bb) __builtin_ctzll(bb); (bb) &= (bb) - 1
 
+#define SQUARE_16 0x10000ULL
 #define SQUARE_24 0x1000000ULL
 #define SQUARE_32 0x100000000ULL
+#define SQUARE_40 0x10000000000ULL
 
 void bd_clear(Board *board);
 

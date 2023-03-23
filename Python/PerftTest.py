@@ -102,7 +102,7 @@ def testPosition(position, depth):
 
     return passed
 
-'''
+
 testPositions = [
     ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 ', 7],
     ['r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1', 6],
@@ -169,7 +169,7 @@ testPositions = [
     ['8/k1P5/8/1K6/8/8/8/8 w - - 0 1', 7],
     ['8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1', 4],
 ]
-
+'''
 print("Building...")
 os.chdir(os.path.join(os.path.abspath(os.path.curdir),u'..'))
 p = subprocess.run(['./build.sh'], capture_output=True)
