@@ -24,8 +24,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Move.h"
 #include "Movegen.h"
 
-long r_perft_t58A37877(Board *board, int depth, int originalDepth);
-long r_perft_tCC45A78A(Board *board, int depth, int originalDepth);
+long r_perft_tEE0A6BA6(Board *board, int depth, int originalDepth);
+long r_perft_t07EC5669(Board *board, int depth, int originalDepth);
 int perft(Board *board, int depth);
 
 #endif

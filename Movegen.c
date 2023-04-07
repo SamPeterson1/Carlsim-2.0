@@ -96,11 +96,9 @@ Bitboard knightMoves[64];
 Bitboard pawnCaptures[2][64];
 Bitboard kingMoves[64];
 Bitboard diagonalMoves[64];
-Bitboard nwseMoves[64];
 Bitboard neswMoves[64];
 Bitboard slidingMoves[64];
 Bitboard nsMoves[64];
-Bitboard ewMoves[64];
 Bitboard diagonalMovesWithLast[64];
 Bitboard slidingMovesWithLast[64];
 Bitboard pinRays[64][64];
@@ -175,18 +173,6 @@ Bitboard genKingMoves(int rank, int file) {
     }
 
     return bitboard;
-}
-
-void printBitboard(Bitboard *bitboard) {
-    for(int rank = 7; rank >= 0; rank --) {
-        for(int file = 0; file < 8; file ++) {
-            int i = rank*8 + file;
-            if(((*bitboard >> i) & 1) == 1) printf("# ");
-            else printf(". ");
-        }
-        printf("\n");
-    }
-    printf("\n");
 }
 
 int inBounds(int rank, int file) {
@@ -275,14 +261,10 @@ void populateDirectionalMoves(int rank, int file, const int *directions, Bitboar
             }
         }
 
-        if (dir == EAST || dir == WEST) {
-            ewMoves[SQUARE(rank, file)] |= directionalMoves;
-        } else if (dir == NORTH || dir == SOUTH) {
+        if (dir == NORTH || dir == SOUTH) {
             nsMoves[SQUARE(rank, file)] |= directionalMoves;
         } else if (dir == NORTHEAST || dir == SOUTHWEST) {
             neswMoves[SQUARE(rank, file)] |= directionalMoves;
-        } else if (dir == NORTHWEST || dir == SOUTHEAST) {
-            nwseMoves[SQUARE(rank, file)] |= directionalMoves;
         }
 
     } 
@@ -361,9 +343,7 @@ void mg_init(void) {
             int square = rank * 8 + file;
 
             nsMoves[square] = 0;
-            ewMoves[square] = 0;
             neswMoves[square] = 0;
-            nwseMoves[square] = 0;
 
             slidingMHTs[square] = mht_create(slidingMHTBits[square], slidingMagics[square]);
             slidingPinMHTs[square] = mht_create(slidingMHTBits[square], slidingMagics[square]);
@@ -467,6 +447,7 @@ int mg_gen(Board *board, Move *moves) {
     //Exclude pins with more than one protector
     slidingPins = MHT_GET_VALUE(slidingPinMHTs[kingPos], slidingPins & board->colorBitboards[turn]);
 
+    //Split sliding pins into vertical and horizontal directions
     Bitboard nsPins = slidingPins & nsMoves[kingPos];
     Bitboard ewPins = slidingPins ^ nsPins;
 
@@ -484,13 +465,16 @@ int mg_gen(Board *board, Move *moves) {
     Bitboard neswPins = diagonalPins & neswMoves[kingPos];
     Bitboard nwsePins = diagonalPins ^ neswPins;
 
+    //The check mask consists of all of the legal moves that stop a check (full board if the king is not in check)
+    //This does not include check evasions, which have been generated previously
     Bitboard checkMask = BB_FULL_BOARD;
     
     if(numCheckers == 1) {
         if (checkers & (oppSliders | oppDiagonals)) {
-            int checkerPos = BB_GET_LSB(checkers);
-            checkMask = pinRays[kingPos][checkerPos];
+            //If we are attacked by a sliding or diagonal piece, the check mask is a ray from the king to the piece, inclusive
+            checkMask = pinRays[kingPos][BB_GET_LSB(checkers)];
         } else {
+            //If we are attacked by any other piece, we can only capture it
             checkMask = checkers;
         }
     }
@@ -498,10 +482,7 @@ int mg_gen(Board *board, Move *moves) {
     Bitboard emptySquares = ~board->bitboard;
     Bitboard notOurColor = ~board->colorBitboards[turn];
 
-    Bitboard hvPins = nsPins | ewPins;
-    Bitboard diagPins = neswPins | nwsePins;
-    Bitboard allPins = hvPins | diagPins;
-    
+    //No pawn can move if it is pinned horizontally
     Bitboard pawns = PAWNS(board, turn) & ~ewPins;
     int epFile = EP_FILE(board);
 
@@ -509,9 +490,9 @@ int mg_gen(Board *board, Move *moves) {
         Bitboard pawnsOn7 = pawns & RANK_7_MASK;
         pawns ^= pawnsOn7;
 
-        //Pawns can only be pushed to empty squares
+        //Pawns can only be pushed to empty squares if they are not pinned diagonally
         Bitboard bb1 = ((pawns & ~(neswPins | nwsePins)) << 8) & emptySquares;
-        //White pawns can only be double pushed to empty squares in the fourth rank if they can be single pushed
+        //Pawns can only be double pushed to empty squares in the fourth rank if they can be single pushed
         Bitboard bb2 = (bb1 << 8) & emptySquares & RANK_4_MASK & checkMask;
         bb1 &= checkMask;
         
@@ -527,9 +508,9 @@ int mg_gen(Board *board, Move *moves) {
             moves[movec ++] = CREATE_MOVE(dest - 16, dest, DOUBLE_PAWN_PUSH);
         }
 
-        //White pawns not on file 1 can left capture a black piece
+        //Pawns not on file 1 can left capture a black piece if they are not pinned vertically or ne-sw diagonally
         bb1 = ((pawns & NOT_FILE_1_MASK & ~(nsPins | neswPins)) << 7) & board->colorBitboards[BLACK] & checkMask;
-        //White pawns not on file 8 can right capture a black piece
+        //Pawns not on file 8 can right capture a black piece if they are not pinned verticaly or nw-se diagonally
         bb2 = ((pawns & NOT_FILE_8_MASK & ~(nsPins | nwsePins)) << 9) & board->colorBitboards[BLACK] & checkMask;
 
         //Left pawn captures
@@ -574,18 +555,22 @@ int mg_gen(Board *board, Move *moves) {
 
         //En passant captures
         if (epFile >= 0) {
-            Bitboard epDest = ((SQUARE_32 << epFile) & ~(neswPins | nwsePins) & checkMask) << 8;
+            //Generate the destination square for ep captures
+            Bitboard epDest = ((SQUARE_32 << epFile) & checkMask) << 8;
 
+            //Pawns not on file 1 can left ep capture if they are not pinned vertically or ne-sw diagonally
             Bitboard lEpDest = ((pawns & NOT_FILE_1_MASK & ~(nsPins | neswPins)) << 7) & epDest;
+            //Pawns not on file 8 can right ep capture if they are not pinned vertically or nw-se diagonally
             Bitboard rEpDest = ((pawns & NOT_FILE_8_MASK & ~(nsPins | nwsePins)) << 9) & epDest;
 
             if (lEpDest) {
                 int dest = BB_GET_LSB(lEpDest);
                 int origin = dest - 7;
                 
+                //Simulate ep capture
                 Bitboard afterEp = board->bitboard ^ ((1ULL << origin) | (1ULL << (dest - 8))) ^ lEpDest;
 
-                //Find discovered checkers, if any
+                //Find discovered checkers, if any (note that the only discovered checkers here can be sliders)
                 Bitboard discoveredCheckers = (PIECE_BITBOARD(board, BLACK_QUEEN) | PIECE_BITBOARD(board, BLACK_ROOK)) & MHT_GET_VALUE(slidingMHTs[kingPos], slidingMoves[kingPos] & afterEp);
 
                 //Ensure the king will not be in check after taking ep
@@ -599,10 +584,8 @@ int mg_gen(Board *board, Move *moves) {
                 
                 Bitboard afterEp = board->bitboard ^ ((1ULL << origin) | (1ULL << (dest - 8))) ^ rEpDest;
 
-                //Find discovered checkers, if any
                 Bitboard discoveredCheckers = (PIECE_BITBOARD(board, BLACK_QUEEN) | PIECE_BITBOARD(board, BLACK_ROOK)) & MHT_GET_VALUE(slidingMHTs[kingPos], slidingMoves[kingPos] & afterEp);
 
-                //Ensure the king will not be in check after taking ep
                 if(discoveredCheckers == 0)
                     moves[movec ++] = CREATE_MOVE(origin, dest, EP_CAPTURE);
             }
@@ -660,7 +643,7 @@ int mg_gen(Board *board, Move *moves) {
         }
 
         if (epFile >= 0) {
-            Bitboard epDest = ((SQUARE_24 << epFile) & ~(neswPins | nwsePins) & checkMask) >> 8;
+            Bitboard epDest = ((SQUARE_24 << epFile) & checkMask) >> 8;
 
             Bitboard lEpDest = ((pawns & NOT_FILE_8_MASK & ~(nsPins | neswPins)) >> 7) & epDest;
             Bitboard rEpDest = ((pawns & NOT_FILE_1_MASK & ~(nsPins | nwsePins)) >> 9) & epDest;
@@ -695,6 +678,9 @@ int mg_gen(Board *board, Move *moves) {
         }
     /*endif*/
 
+    Bitboard allPins = slidingPins | diagonalPins;
+
+    //Generate knight moves
     Bitboard knights = KNIGHTS(board, turn) & ~allPins;
     while (knights) {
         int origin = BB_POP_LSB(knights);
@@ -707,12 +693,16 @@ int mg_gen(Board *board, Move *moves) {
     }
 
     Bitboard sliders = ROOKS(board, turn) | QUEENS(board, turn);
-    Bitboard pinnedSliders = sliders & hvPins;
+    //Note that diagonally pinned sliders cannot move
+    Bitboard pinnedSliders = sliders & slidingPins;
     Bitboard unpinnedSliders = sliders & ~allPins;
 
+    //Generate moves for pinned sliders
     while (pinnedSliders) {
         int origin = BB_POP_LSB(pinnedSliders);
         Bitboard blockers = slidingMoves[origin] & board->bitboard;
+
+        //Pinned sliders can only move along the pin ray
         Bitboard moveBitboard = MHT_GET_VALUE(slidingMHTs[origin], blockers) & notOurColor & checkMask & slidingMovesWithLast[kingPos];
 
         while (moveBitboard) {
@@ -721,6 +711,7 @@ int mg_gen(Board *board, Move *moves) {
         }
     }
 
+    //Generate moves for unpinned sliders
     while (unpinnedSliders) {
         int origin = BB_POP_LSB(unpinnedSliders);
         Bitboard blockers = slidingMoves[origin] & board->bitboard;
@@ -732,9 +723,9 @@ int mg_gen(Board *board, Move *moves) {
         }
     }
     
-    
+    //Same as above, but for diagonals    
     Bitboard diagonals = BISHOPS(board, turn) | QUEENS(board, turn);
-    Bitboard pinnedDiagonals = diagonals & diagPins;
+    Bitboard pinnedDiagonals = diagonals & diagonalPins;
     Bitboard unpinnedDiagonals = diagonals & ~allPins;
 
     while (pinnedDiagonals) {

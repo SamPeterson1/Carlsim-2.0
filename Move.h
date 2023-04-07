@@ -90,33 +90,33 @@ static inline void mv_make(Move move, Board *board) {
     int epFile = EP_FILE(board);
     
     /*if<turn: WHITE>*/
-    Piece promotion = promotionLookupsWhite[special >> 12];
-    #define OUR_TURN WHITE
-    #define OPP_TURN BLACK
-    #define TURN_PAWN WHITE_PAWN
-    #define OPP_TURN_PAWN BLACK_PAWN
-    #define TURN_KING WHITE_KING
-    #define TURN_ROOK WHITE_ROOK
-    #define TURN_KING_KINGSIDE_CASTLE_BB WHITE_KING_KINGSIDE_CASTLE_BB
-    #define TURN_ROOK_KINGSIDE_CASTLE_BB WHITE_ROOK_KINGSIDE_CASTLE_BB
-    #define TURN_KING_QUEENSIDE_CASTLE_BB WHITE_KING_QUEENSIDE_CASTLE_BB
-    #define TURN_ROOK_QUEENSIDE_CASTLE_BB WHITE_ROOK_QUEENSIDE_CASTLE_BB
-    #define TURN_KINGSIDE_CASTLE_BB WHITE_KINGSIDE_CASTLE_BB
-    #define TURN_QUEENSIDE_CASTLE_BB WHITE_QUEENSIDE_CASTLE_BB
+        Piece promotion = promotionLookupsWhite[special >> 12];
+        #define OUR_TURN WHITE
+        #define OPP_TURN BLACK
+        #define TURN_PAWN WHITE_PAWN
+        #define OPP_TURN_PAWN BLACK_PAWN
+        #define TURN_KING WHITE_KING
+        #define TURN_ROOK WHITE_ROOK
+        #define TURN_KING_KINGSIDE_CASTLE_BB WHITE_KING_KINGSIDE_CASTLE_BB
+        #define TURN_ROOK_KINGSIDE_CASTLE_BB WHITE_ROOK_KINGSIDE_CASTLE_BB
+        #define TURN_KING_QUEENSIDE_CASTLE_BB WHITE_KING_QUEENSIDE_CASTLE_BB
+        #define TURN_ROOK_QUEENSIDE_CASTLE_BB WHITE_ROOK_QUEENSIDE_CASTLE_BB
+        #define TURN_KINGSIDE_CASTLE_BB WHITE_KINGSIDE_CASTLE_BB
+        #define TURN_QUEENSIDE_CASTLE_BB WHITE_QUEENSIDE_CASTLE_BB
     /*elif<turn: BLACK>*/
-    Piece promotion = promotionLookupsBlack[special >> 12];
-    #define OUR_TURN BLACK
-    #define OPP_TURN WHITE
-    #define TURN_PAWN BLACK_PAWN
-    #define OPP_TURN_PAWN WHITE_PAWN
-    #define TURN_KING BLACK_KING
-    #define TURN_ROOK BLACK_ROOK
-    #define TURN_KING_KINGSIDE_CASTLE_BB BLACK_KING_KINGSIDE_CASTLE_BB
-    #define TURN_ROOK_KINGSIDE_CASTLE_BB BLACK_ROOK_KINGSIDE_CASTLE_BB
-    #define TURN_KING_QUEENSIDE_CASTLE_BB BLACK_KING_QUEENSIDE_CASTLE_BB
-    #define TURN_ROOK_QUEENSIDE_CASTLE_BB BLACK_ROOK_QUEENSIDE_CASTLE_BB
-    #define TURN_KINGSIDE_CASTLE_BB BLACK_KINGSIDE_CASTLE_BB
-    #define TURN_QUEENSIDE_CASTLE_BB BLACK_QUEENSIDE_CASTLE_BB
+        Piece promotion = promotionLookupsBlack[special >> 12];
+        #define OUR_TURN BLACK
+        #define OPP_TURN WHITE
+        #define TURN_PAWN BLACK_PAWN
+        #define OPP_TURN_PAWN WHITE_PAWN
+        #define TURN_KING BLACK_KING
+        #define TURN_ROOK BLACK_ROOK
+        #define TURN_KING_KINGSIDE_CASTLE_BB BLACK_KING_KINGSIDE_CASTLE_BB
+        #define TURN_ROOK_KINGSIDE_CASTLE_BB BLACK_ROOK_KINGSIDE_CASTLE_BB
+        #define TURN_KING_QUEENSIDE_CASTLE_BB BLACK_KING_QUEENSIDE_CASTLE_BB
+        #define TURN_ROOK_QUEENSIDE_CASTLE_BB BLACK_ROOK_QUEENSIDE_CASTLE_BB
+        #define TURN_KINGSIDE_CASTLE_BB BLACK_KINGSIDE_CASTLE_BB
+        #define TURN_QUEENSIDE_CASTLE_BB BLACK_QUEENSIDE_CASTLE_BB
     /*endif*/
 
     SET_EP_FILE(board, -1);
@@ -162,11 +162,11 @@ static inline void mv_make(Move move, Board *board) {
         board->pieceBitboards[TURN_ROOK] ^= TURN_ROOK_KINGSIDE_CASTLE_BB;
 
         /*if<turn: WHITE>*/
-        board->pieces[6] = TURN_KING; board->pieces[4] = PIECE_NONE;
-        board->pieces[5] = TURN_ROOK; board->pieces[7] = PIECE_NONE; 
+            board->pieces[6] = TURN_KING; board->pieces[4] = PIECE_NONE;
+            board->pieces[5] = TURN_ROOK; board->pieces[7] = PIECE_NONE; 
         /*elif<turn: BLACK>*/
-        board->pieces[62] = TURN_KING; board->pieces[60] = PIECE_NONE;
-        board->pieces[61] = TURN_ROOK; board->pieces[63] = PIECE_NONE;
+            board->pieces[62] = TURN_KING; board->pieces[60] = PIECE_NONE;
+            board->pieces[61] = TURN_ROOK; board->pieces[63] = PIECE_NONE;
         /*endif*/
     } else if(special == QUEENSIDE_CASTLE) {
         board->bitboard ^= TURN_QUEENSIDE_CASTLE_BB;
@@ -176,18 +176,18 @@ static inline void mv_make(Move move, Board *board) {
         board->pieceBitboards[TURN_ROOK] ^= TURN_ROOK_QUEENSIDE_CASTLE_BB;
 
         /*if<turn: WHITE>*/
-        board->pieces[2] = TURN_KING; board->pieces[4] = PIECE_NONE;
-        board->pieces[3] = TURN_ROOK; board->pieces[0] = PIECE_NONE;
+            board->pieces[2] = TURN_KING; board->pieces[4] = PIECE_NONE;
+            board->pieces[3] = TURN_ROOK; board->pieces[0] = PIECE_NONE;
         /*elif<turn: BLACK>*/
-        board->pieces[58] = TURN_KING; board->pieces[60] = PIECE_NONE;
-        board->pieces[59] = TURN_ROOK; board->pieces[56] = PIECE_NONE;
+            board->pieces[58] = TURN_KING; board->pieces[60] = PIECE_NONE;
+            board->pieces[59] = TURN_ROOK; board->pieces[56] = PIECE_NONE;
         /*endif*/
     } else if (special == EP_CAPTURE) {
         Bitboard moveBB = (1ULL << origin) | (1ULL << dest);
         /*if<turn: WHITE>*/
-        Bitboard epPawn = SQUARE_32 << epFile;
+            Bitboard epPawn = SQUARE_32 << epFile;
         /*elif<turn: BLACK>*/
-        Bitboard epPawn = SQUARE_24 << epFile;
+            Bitboard epPawn = SQUARE_24 << epFile;
         /*endif*/
 
         board->bitboard ^= moveBB | epPawn;
@@ -250,33 +250,33 @@ static inline void mv_unmake(MoveResult *result, Board *board) {
     int special = MOVE_SPECIAL(result->move);
     
     /*if<turn: WHITE>*/
-    Piece promotion = promotionLookupsWhite[special >> 12];
-    #define OUR_TURN WHITE
-    #define OPP_TURN BLACK
-    #define TURN_PAWN WHITE_PAWN
-    #define OPP_TURN_PAWN BLACK_PAWN
-    #define TURN_KING WHITE_KING
-    #define TURN_ROOK WHITE_ROOK
-    #define TURN_KING_KINGSIDE_CASTLE_BB WHITE_KING_KINGSIDE_CASTLE_BB
-    #define TURN_ROOK_KINGSIDE_CASTLE_BB WHITE_ROOK_KINGSIDE_CASTLE_BB
-    #define TURN_KING_QUEENSIDE_CASTLE_BB WHITE_KING_QUEENSIDE_CASTLE_BB
-    #define TURN_ROOK_QUEENSIDE_CASTLE_BB WHITE_ROOK_QUEENSIDE_CASTLE_BB
-    #define TURN_KINGSIDE_CASTLE_BB WHITE_KINGSIDE_CASTLE_BB
-    #define TURN_QUEENSIDE_CASTLE_BB WHITE_QUEENSIDE_CASTLE_BB
+        Piece promotion = promotionLookupsWhite[special >> 12];
+        #define OUR_TURN WHITE
+        #define OPP_TURN BLACK
+        #define TURN_PAWN WHITE_PAWN
+        #define OPP_TURN_PAWN BLACK_PAWN
+        #define TURN_KING WHITE_KING
+        #define TURN_ROOK WHITE_ROOK
+        #define TURN_KING_KINGSIDE_CASTLE_BB WHITE_KING_KINGSIDE_CASTLE_BB
+        #define TURN_ROOK_KINGSIDE_CASTLE_BB WHITE_ROOK_KINGSIDE_CASTLE_BB
+        #define TURN_KING_QUEENSIDE_CASTLE_BB WHITE_KING_QUEENSIDE_CASTLE_BB
+        #define TURN_ROOK_QUEENSIDE_CASTLE_BB WHITE_ROOK_QUEENSIDE_CASTLE_BB
+        #define TURN_KINGSIDE_CASTLE_BB WHITE_KINGSIDE_CASTLE_BB
+        #define TURN_QUEENSIDE_CASTLE_BB WHITE_QUEENSIDE_CASTLE_BB
     /*elif<turn: BLACK>*/
-    Piece promotion = promotionLookupsBlack[special >> 12];
-    #define OUR_TURN BLACK
-    #define OPP_TURN WHITE
-    #define TURN_PAWN BLACK_PAWN
-    #define OPP_TURN_PAWN WHITE_PAWN
-    #define TURN_KING BLACK_KING
-    #define TURN_ROOK BLACK_ROOK
-    #define TURN_KING_KINGSIDE_CASTLE_BB BLACK_KING_KINGSIDE_CASTLE_BB
-    #define TURN_ROOK_KINGSIDE_CASTLE_BB BLACK_ROOK_KINGSIDE_CASTLE_BB
-    #define TURN_KING_QUEENSIDE_CASTLE_BB BLACK_KING_QUEENSIDE_CASTLE_BB
-    #define TURN_ROOK_QUEENSIDE_CASTLE_BB BLACK_ROOK_QUEENSIDE_CASTLE_BB
-    #define TURN_KINGSIDE_CASTLE_BB BLACK_KINGSIDE_CASTLE_BB
-    #define TURN_QUEENSIDE_CASTLE_BB BLACK_QUEENSIDE_CASTLE_BB
+        Piece promotion = promotionLookupsBlack[special >> 12];
+        #define OUR_TURN BLACK
+        #define OPP_TURN WHITE
+        #define TURN_PAWN BLACK_PAWN
+        #define OPP_TURN_PAWN WHITE_PAWN
+        #define TURN_KING BLACK_KING
+        #define TURN_ROOK BLACK_ROOK
+        #define TURN_KING_KINGSIDE_CASTLE_BB BLACK_KING_KINGSIDE_CASTLE_BB
+        #define TURN_ROOK_KINGSIDE_CASTLE_BB BLACK_ROOK_KINGSIDE_CASTLE_BB
+        #define TURN_KING_QUEENSIDE_CASTLE_BB BLACK_KING_QUEENSIDE_CASTLE_BB
+        #define TURN_ROOK_QUEENSIDE_CASTLE_BB BLACK_ROOK_QUEENSIDE_CASTLE_BB
+        #define TURN_KINGSIDE_CASTLE_BB BLACK_KINGSIDE_CASTLE_BB
+        #define TURN_QUEENSIDE_CASTLE_BB BLACK_QUEENSIDE_CASTLE_BB
     /*endif*/
 
     board->gameState = result->prevGameState;
@@ -311,11 +311,11 @@ static inline void mv_unmake(MoveResult *result, Board *board) {
         board->pieceBitboards[TURN_ROOK] ^= TURN_ROOK_KINGSIDE_CASTLE_BB;
 
         /*if<turn: WHITE>*/
-        board->pieces[6] = PIECE_NONE; board->pieces[4] = TURN_KING;
-        board->pieces[5] = PIECE_NONE; board->pieces[7] = TURN_ROOK; 
+            board->pieces[6] = PIECE_NONE; board->pieces[4] = TURN_KING;
+            board->pieces[5] = PIECE_NONE; board->pieces[7] = TURN_ROOK; 
         /*elif<turn: BLACK>*/
-        board->pieces[62] = PIECE_NONE; board->pieces[60] = TURN_KING;
-        board->pieces[61] = PIECE_NONE; board->pieces[63] = TURN_ROOK;
+            board->pieces[62] = PIECE_NONE; board->pieces[60] = TURN_KING;
+            board->pieces[61] = PIECE_NONE; board->pieces[63] = TURN_ROOK;
         /*endif*/
     } else if(special == QUEENSIDE_CASTLE) {
         board->bitboard ^= TURN_QUEENSIDE_CASTLE_BB;
@@ -325,18 +325,18 @@ static inline void mv_unmake(MoveResult *result, Board *board) {
         board->pieceBitboards[TURN_ROOK] ^= TURN_ROOK_QUEENSIDE_CASTLE_BB;
 
         /*if<turn: WHITE>*/
-        board->pieces[2] = PIECE_NONE; board->pieces[4] = TURN_KING;
-        board->pieces[3] = PIECE_NONE; board->pieces[0] = TURN_ROOK;
+            board->pieces[2] = PIECE_NONE; board->pieces[4] = TURN_KING;
+            board->pieces[3] = PIECE_NONE; board->pieces[0] = TURN_ROOK;
         /*elif<turn: BLACK>*/
-        board->pieces[58] = PIECE_NONE; board->pieces[60] = TURN_KING;
-        board->pieces[59] = PIECE_NONE; board->pieces[56] = TURN_ROOK;
+            board->pieces[58] = PIECE_NONE; board->pieces[60] = TURN_KING;
+            board->pieces[59] = PIECE_NONE; board->pieces[56] = TURN_ROOK;
         /*endif*/
     }  else if (special == EP_CAPTURE) {
         Bitboard moveBB = (1ULL << origin) | (1ULL << dest);
         /*if<turn: WHITE>*/
-        Bitboard epPawn = SQUARE_32 << EP_FILE(board);
+            Bitboard epPawn = SQUARE_32 << EP_FILE(board);
         /*elif<turn: BLACK>*/
-        Bitboard epPawn = SQUARE_24 << EP_FILE(board);
+            Bitboard epPawn = SQUARE_24 << EP_FILE(board);
         /*endif*/
 
         board->bitboard ^= moveBB | epPawn;
