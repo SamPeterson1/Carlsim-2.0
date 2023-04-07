@@ -46,8 +46,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 void mg_init(void);
 
-/*template<turn: WHITE | BLACK>*/
-int mg_gen(Board *board, Move *moves);
-/*endtemplate*/
+int mg_gen_t4FC832A0(Board *board, Move *moves);
+int mg_gen_t1A9921E3(Board *board, Move *moves);
 
 #endif

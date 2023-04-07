@@ -16,17 +16,19 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef PERFT_H
+#ifndef FEN_H
 
-#define PERFT_H
+#define FEN_H
+
+#include <string.h>
+#include <stdlib.h>
 
 #include "Board.h"
-#include "Move.h"
-#include "Movegen.h"
+#include "Piece.h"
 
-/*template<turn: WHITE | BLACK>*/
-long r_perft(Board *board, int depth, int originalDepth);
-/*endtemplate*/
-int perft(Board *board, int depth);
+#define STARTING_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+
+void fen_load(Board *board, char *fen);
+void fen_get(Board *board, char *fen);
 
 #endif

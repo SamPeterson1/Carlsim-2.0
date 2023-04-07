@@ -16,17 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef PERFT_H
+#include <string.h>
+#include <stdlib.h>
 
-#define PERFT_H
+#define TRUE 1
+#define FALSE 0
+#define MAX_ARG_COUNT 16
+#define MAX_ARG_LENGTH 256
 
-#include "Board.h"
-#include "Move.h"
-#include "Movegen.h"
-
-/*template<turn: WHITE | BLACK>*/
-long r_perft(Board *board, int depth, int originalDepth);
-/*endtemplate*/
-int perft(Board *board, int depth);
-
-#endif
+char **initBuffer(void);
+void parse(const char *str, char **args, int *argc);

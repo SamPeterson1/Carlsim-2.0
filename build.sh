@@ -1,3 +1,4 @@
 #!/bin/bash
-
-gcc -g -pg -g3 -O3 -Wall -o carlsim.out Main.c Movegen.c Movegen.h Board.c Board.h Fen.c Fen.h Piece.c Piece.h StrUtil.c StrUtil.h Log.c Log.h Move.c Move.h Perft.c Perft.h uci.c uci.h MagicHashTable.c MagicHashTable.h
+python3 Python/TemplatePreprocessor.py Main.c Movegen.c Movegen.h Board.c Board.h Fen.c Fen.h Piece.c Piece.h StrUtil.c StrUtil.h Log.c Log.h Move.c Move.h Perft.c Perft.h uci.c uci.h MagicHashTable.c MagicHashTable.h
+cd Processed/
+gcc -g -pg -g3 -O3 -Wall -o ../carlsim.out Main.c Movegen.c Movegen.h Board.c Board.h Fen.c Fen.h Piece.c Piece.h StrUtil.c StrUtil.h Log.c Log.h Move.c Move.h Perft.c Perft.h uci.c uci.h MagicHashTable.c MagicHashTable.h

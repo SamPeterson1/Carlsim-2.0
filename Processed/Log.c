@@ -16,17 +16,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef PERFT_H
+#include "Log.h"
 
-#define PERFT_H
+void clearLog(void) {
+    FILE *l = fopen("Log/log.txt", "w");
+    fclose(l);
+}
 
-#include "Board.h"
-#include "Move.h"
-#include "Movegen.h"
-
-/*template<turn: WHITE | BLACK>*/
-long r_perft(Board *board, int depth, int originalDepth);
-/*endtemplate*/
-int perft(Board *board, int depth);
-
-#endif
+void lprintf(char *format, ...) {
+    
+    FILE *l = fopen("Log/log.txt", "a");
+    va_list args;
+    va_start(args, format);
+    vfprintf(l, format, args);
+    va_end(args);
+    fclose(l);
+    
+}

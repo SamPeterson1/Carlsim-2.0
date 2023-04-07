@@ -16,17 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef PERFT_H
+#ifndef LOG_H
 
-#define PERFT_H
+#define LOG_H
 
-#include "Board.h"
-#include "Move.h"
-#include "Movegen.h"
+#include <stdarg.h>
+#include <stdio.h>
 
-/*template<turn: WHITE | BLACK>*/
-long r_perft(Board *board, int depth, int originalDepth);
-/*endtemplate*/
-int perft(Board *board, int depth);
+void clearLog(void);
+void lprintf(char *format, ...);
 
 #endif

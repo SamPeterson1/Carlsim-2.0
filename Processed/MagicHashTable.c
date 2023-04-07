@@ -16,17 +16,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef PERFT_H
+#include "MagicHashTable.h"
 
-#define PERFT_H
+MagicHashTable *mht_create(int bits, uint64_t magic) {
+    MagicHashTable *table = (MagicHashTable *) malloc(sizeof(MagicHashTable));
+    table->invBits = 64 - bits;
+    table->magic = magic;
+    int size = 1 << bits;
+    table->items = (Bitboard*) calloc(size, sizeof(Bitboard));
+    for (int i=0; i<size; i++)
+        table->items[i] = 0;
+    return table;
+}
 
-#include "Board.h"
-#include "Move.h"
-#include "Movegen.h"
-
-/*template<turn: WHITE | BLACK>*/
-long r_perft(Board *board, int depth, int originalDepth);
-/*endtemplate*/
-int perft(Board *board, int depth);
-
-#endif
+void mht_insert(MagicHashTable *table, Bitboard key, Bitboard value) {
+    uint16_t hash = (key * table->magic) >> (uint64_t)(table->invBits);
+    table->items[hash] = value;
+}

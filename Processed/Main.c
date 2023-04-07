@@ -16,17 +16,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef PERFT_H
+#include "uci.h"
 
-#define PERFT_H
+int main(void) {
+    char cmd[1024];
+    
+    setbuf(stdout, NULL);
+    
+    //Execute command read from stdin
+    while (1) {
+        if (fgets(cmd, 1024, stdin) && uci_exec(cmd)) 
+            return 0;
+    }
 
-#include "Board.h"
-#include "Move.h"
-#include "Movegen.h"
-
-/*template<turn: WHITE | BLACK>*/
-long r_perft(Board *board, int depth, int originalDepth);
-/*endtemplate*/
-int perft(Board *board, int depth);
-
-#endif
+   return 0;
+}

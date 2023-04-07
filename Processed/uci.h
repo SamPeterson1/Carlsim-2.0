@@ -16,17 +16,19 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef PERFT_H
+#ifndef UCI_H
 
-#define PERFT_H
+#define UCI_H
 
 #include "Board.h"
-#include "Move.h"
+#include "StrUtil.h"
+#include "Fen.h"
 #include "Movegen.h"
+#include "Move.h"
+#include "Perft.h"
+#include <stdlib.h>
 
-/*template<turn: WHITE | BLACK>*/
-long r_perft(Board *board, int depth, int originalDepth);
-/*endtemplate*/
-int perft(Board *board, int depth);
+int uci_exec(char *cmd);
+void uci_perfTest(void);
 
 #endif

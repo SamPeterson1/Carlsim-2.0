@@ -382,8 +382,7 @@ void mg_init(void) {
     }
 }
 
-/*template<turn: WHITE | BLACK>*/
-int mg_gen(Board *board, Move *moves) {
+int mg_gen_t4FC832A0(Board *board, Move *moves) {
     int turn = TURN(board);
     int oppTurn = 1 - turn;
     int movec = 0;
@@ -397,13 +396,8 @@ int mg_gen(Board *board, Move *moves) {
     
     //Add pawn attacks
     Bitboard bb = PAWNS(board, oppTurn);
-    /*if<turn: WHITE>*/
         attackedSquares |= (bb & NOT_FILE_8_MASK) >> 7;
         attackedSquares |= (bb & NOT_FILE_1_MASK) >> 9;
-    /*elif<turn: BLACK>*/
-        attackedSquares |= (bb & NOT_FILE_1_MASK) << 7;
-        attackedSquares |= (bb & NOT_FILE_8_MASK) << 9;
-    /*endif*/
 
     //Add knight attacks
     bb = KNIGHTS(board, oppTurn);
@@ -505,7 +499,6 @@ int mg_gen(Board *board, Move *moves) {
     Bitboard pawns = PAWNS(board, turn) & ~ewPins;
     int epFile = EP_FILE(board);
 
-    /*if<turn: WHITE>*/
         Bitboard pawnsOn7 = pawns & RANK_7_MASK;
         pawns ^= pawnsOn7;
 
@@ -607,93 +600,6 @@ int mg_gen(Board *board, Move *moves) {
                     moves[movec ++] = CREATE_MOVE(origin, dest, EP_CAPTURE);
             }
         }
-    /*elif<turn: BLACK>*/
-        Bitboard pawnsOn2 = pawns & RANK_2_MASK;
-        pawns ^= pawnsOn2;
-
-        Bitboard singlePushes = ((pawns & ~(neswPins | nwsePins)) >> 8) & emptySquares;
-        Bitboard doublePushes = (singlePushes >> 8) & emptySquares & RANK_5_MASK & checkMask;
-        singlePushes &= checkMask;
-
-        Bitboard lCaptures = ((pawns & NOT_FILE_8_MASK & ~(nsPins | neswPins)) >> 7) & board->colorBitboards[WHITE] & checkMask;
-        Bitboard rCaptures = ((pawns & NOT_FILE_1_MASK & ~(nsPins | nwsePins)) >> 9) & board->colorBitboards[WHITE] & checkMask;
-
-        while (singlePushes) {
-            int dest = BB_POP_LSB(singlePushes);
-            moves[movec ++] = CREATE_MOVE(dest + 8, dest, QUIET);
-        }
-
-        while (doublePushes) {
-            int dest = BB_POP_LSB(doublePushes);
-            moves[movec ++] = CREATE_MOVE(dest + 16, dest, DOUBLE_PAWN_PUSH);
-        }
-
-        while (lCaptures) {
-            int dest = BB_POP_LSB(lCaptures);
-            moves[movec ++] = CREATE_MOVE(dest + 7, dest, QUIET);
-        }
-
-        while (rCaptures) {
-            int dest = BB_POP_LSB(rCaptures);
-            moves[movec ++] = CREATE_MOVE(dest + 9, dest, QUIET);
-        }
-
-        if (pawnsOn2) {
-            Bitboard pushPromotions = ((pawnsOn2 & ~(neswPins | nwsePins)) >> 8) & emptySquares & checkMask;
-            Bitboard lPromotions = ((pawnsOn2 & NOT_FILE_8_MASK & ~(nsPins | neswPins)) >> 7) & board->colorBitboards[WHITE] & checkMask;
-            Bitboard rPromotions = ((pawnsOn2 & NOT_FILE_1_MASK & ~(nsPins | nwsePins)) >> 9) & board->colorBitboards[WHITE] & checkMask;
-
-            while (pushPromotions) {
-                int dest = BB_POP_LSB(pushPromotions);
-                CREATE_PROMOTIONS(moves, movec, dest + 8, dest);
-            }
-
-            while (lPromotions) {
-                int dest = BB_POP_LSB(lPromotions);
-                CREATE_PROMOTIONS(moves, movec, dest + 7, dest);
-            }
-
-            while (rPromotions) {
-                int dest = BB_POP_LSB(rPromotions);
-                CREATE_PROMOTIONS(moves, movec, dest + 9, dest);
-            }
-        }
-
-        if (epFile >= 0) {
-            Bitboard epDest = ((SQUARE_24 << epFile) & ~(neswPins | nwsePins) & checkMask) >> 8;
-
-            Bitboard lEpDest = ((pawns & NOT_FILE_8_MASK & ~(nsPins | neswPins)) >> 7) & epDest;
-            Bitboard rEpDest = ((pawns & NOT_FILE_1_MASK & ~(nsPins | nwsePins)) >> 9) & epDest;
-
-            if (lEpDest) {
-                int dest = BB_GET_LSB(lEpDest);
-                int origin = dest + 7;
-                
-                Bitboard afterEp = board->bitboard ^ ((1ULL << origin) | (1ULL << (dest + 8))) ^ lEpDest;
-
-                //Find discovered checkers, if any
-                Bitboard discoveredCheckers = (PIECE_BITBOARD(board, WHITE_QUEEN) | PIECE_BITBOARD(board, WHITE_ROOK)) & MHT_GET_VALUE(slidingMHTs[kingPos], slidingMoves[kingPos] & afterEp);
-
-                //Ensure the king will not be in check after taking ep
-                if(discoveredCheckers == 0)
-                    moves[movec ++] = CREATE_MOVE(origin, dest, EP_CAPTURE);
-            }
-
-            if (rEpDest) {
-                int dest = BB_GET_LSB(rEpDest);
-                int origin = dest + 9;
-                
-                Bitboard afterEp = board->bitboard ^ ((1ULL << origin) | (1ULL << (dest + 8))) ^ rEpDest;
-
-                //Find discovered checkers, if any
-                Bitboard discoveredCheckers = (PIECE_BITBOARD(board, WHITE_QUEEN) | PIECE_BITBOARD(board, WHITE_ROOK)) & MHT_GET_VALUE(slidingMHTs[kingPos], slidingMoves[kingPos] & afterEp);
-
-                //Ensure the king will not be in check after taking ep
-                if(discoveredCheckers == 0)
-                    moves[movec ++] = CREATE_MOVE(origin, dest, EP_CAPTURE);
-            }
-        }
-    /*endif*/
 
     Bitboard knights = KNIGHTS(board, turn) & ~allPins;
     while (knights) {
@@ -779,4 +685,290 @@ int mg_gen(Board *board, Move *moves) {
 
     return movec;
 }
-/*endtemplate*/
+int mg_gen_t1A9921E3(Board *board, Move *moves) {
+    int turn = TURN(board);
+    int oppTurn = 1 - turn;
+    int movec = 0;
+
+    Bitboard king = KINGS(board, turn);
+    Bitboard withoutKing = board->bitboard ^ king;
+    int kingPos = BB_GET_LSB(king);    
+
+    //Generate attacked squares
+    Bitboard attackedSquares = 0;
+    
+    //Add pawn attacks
+    Bitboard bb = PAWNS(board, oppTurn);
+        attackedSquares |= (bb & NOT_FILE_1_MASK) << 7;
+        attackedSquares |= (bb & NOT_FILE_8_MASK) << 9;
+
+    //Add knight attacks
+    bb = KNIGHTS(board, oppTurn);
+    while (bb) {
+        int square = BB_POP_LSB(bb);
+        attackedSquares |= knightMoves[square];
+    }
+    
+    Bitboard oppSliders = ROOKS(board, oppTurn) | QUEENS(board, oppTurn);
+    Bitboard oppDiagonals = BISHOPS(board, oppTurn) | QUEENS(board, oppTurn);
+
+    //Add sliding attacks
+    bb = oppSliders;
+    while (bb) {
+        int square = BB_POP_LSB(bb);
+        Bitboard blockers = slidingMoves[square] & withoutKing;
+        attackedSquares |= MHT_GET_VALUE(slidingMHTs[square], blockers);
+    }
+
+    //Add diagonal attacks
+    bb = oppDiagonals;
+    while (bb) {
+        int square = BB_POP_LSB(bb);
+        Bitboard blockers = diagonalMoves[square] & withoutKing;
+        attackedSquares |= MHT_GET_VALUE(diagonalMHTs[square], blockers);
+    }
+
+    //Add king attacks
+    attackedSquares |= kingMoves[BB_GET_LSB(KINGS(board, oppTurn))];
+
+    //Generate checkers
+    Bitboard checkers = knightMoves[kingPos] & KNIGHTS(board, oppTurn); //Add knight checkers
+    checkers |= pawnCaptures[turn][kingPos] & PAWNS(board, oppTurn); //Add pawn checkers
+    checkers |= MHT_GET_VALUE(diagonalMHTs[kingPos], diagonalMoves[kingPos] & board->bitboard) & oppDiagonals; //Add diagonal checkers
+    checkers |= MHT_GET_VALUE(slidingMHTs[kingPos], slidingMoves[kingPos] & board->bitboard) & oppSliders; //Add sliding checkers
+    
+    //Generate legal king moves - the king cannot move onto an attacked square or capture its own color piece
+    bb = kingMoves[kingPos] & ~attackedSquares & ~board->colorBitboards[turn];
+    while (bb) {
+        int dest = BB_POP_LSB(bb);
+        moves[movec ++] = CREATE_MOVE(kingPos, dest, QUIET);
+    }
+
+    int numCheckers = BB_POP_COUNT(checkers);
+
+    //If we are in double check, the only legal moves are the king moves just generated
+    if (numCheckers == 2) return movec;
+    
+    //Generate pinned pieces
+
+    //X-ray sliding attackers (attackers ignoring our color pieces)
+    bb = oppSliders & MHT_GET_VALUE(slidingMHTs[kingPos], slidingMoves[kingPos] & board->colorBitboards[oppTurn]);
+
+    //Add rays from each sliding attacker to the king
+    Bitboard slidingPins = 0;
+    while (bb) {
+        int square = BB_POP_LSB(bb);
+        slidingPins |= pinRays[kingPos][square];
+    }
+    
+    //Exclude pins with more than one protector
+    slidingPins = MHT_GET_VALUE(slidingPinMHTs[kingPos], slidingPins & board->colorBitboards[turn]);
+
+    Bitboard nsPins = slidingPins & nsMoves[kingPos];
+    Bitboard ewPins = slidingPins ^ nsPins;
+
+    //Same, but with diagonal attackers
+    bb = oppDiagonals & MHT_GET_VALUE(diagonalMHTs[kingPos], diagonalMoves[kingPos] & board->colorBitboards[oppTurn]);
+
+    Bitboard diagonalPins = 0;
+    while (bb) {
+        int square = BB_POP_LSB(bb);
+        diagonalPins |= pinRays[kingPos][square];
+    }
+
+    diagonalPins = MHT_GET_VALUE(diagonalPinMHTs[kingPos], diagonalPins & board->colorBitboards[turn]);
+
+    Bitboard neswPins = diagonalPins & neswMoves[kingPos];
+    Bitboard nwsePins = diagonalPins ^ neswPins;
+
+    Bitboard checkMask = BB_FULL_BOARD;
+    
+    if(numCheckers == 1) {
+        if (checkers & (oppSliders | oppDiagonals)) {
+            int checkerPos = BB_GET_LSB(checkers);
+            checkMask = pinRays[kingPos][checkerPos];
+        } else {
+            checkMask = checkers;
+        }
+    }
+
+    Bitboard emptySquares = ~board->bitboard;
+    Bitboard notOurColor = ~board->colorBitboards[turn];
+
+    Bitboard hvPins = nsPins | ewPins;
+    Bitboard diagPins = neswPins | nwsePins;
+    Bitboard allPins = hvPins | diagPins;
+    
+    Bitboard pawns = PAWNS(board, turn) & ~ewPins;
+    int epFile = EP_FILE(board);
+
+        Bitboard pawnsOn2 = pawns & RANK_2_MASK;
+        pawns ^= pawnsOn2;
+
+        Bitboard singlePushes = ((pawns & ~(neswPins | nwsePins)) >> 8) & emptySquares;
+        Bitboard doublePushes = (singlePushes >> 8) & emptySquares & RANK_5_MASK & checkMask;
+        singlePushes &= checkMask;
+
+        Bitboard lCaptures = ((pawns & NOT_FILE_8_MASK & ~(nsPins | neswPins)) >> 7) & board->colorBitboards[WHITE] & checkMask;
+        Bitboard rCaptures = ((pawns & NOT_FILE_1_MASK & ~(nsPins | nwsePins)) >> 9) & board->colorBitboards[WHITE] & checkMask;
+
+        while (singlePushes) {
+            int dest = BB_POP_LSB(singlePushes);
+            moves[movec ++] = CREATE_MOVE(dest + 8, dest, QUIET);
+        }
+
+        while (doublePushes) {
+            int dest = BB_POP_LSB(doublePushes);
+            moves[movec ++] = CREATE_MOVE(dest + 16, dest, DOUBLE_PAWN_PUSH);
+        }
+
+        while (lCaptures) {
+            int dest = BB_POP_LSB(lCaptures);
+            moves[movec ++] = CREATE_MOVE(dest + 7, dest, QUIET);
+        }
+
+        while (rCaptures) {
+            int dest = BB_POP_LSB(rCaptures);
+            moves[movec ++] = CREATE_MOVE(dest + 9, dest, QUIET);
+        }
+
+        if (pawnsOn2) {
+            Bitboard pushPromotions = ((pawnsOn2 & ~(neswPins | nwsePins)) >> 8) & emptySquares & checkMask;
+            Bitboard lPromotions = ((pawnsOn2 & NOT_FILE_8_MASK & ~(nsPins | neswPins)) >> 7) & board->colorBitboards[WHITE] & checkMask;
+            Bitboard rPromotions = ((pawnsOn2 & NOT_FILE_1_MASK & ~(nsPins | nwsePins)) >> 9) & board->colorBitboards[WHITE] & checkMask;
+
+            while (pushPromotions) {
+                int dest = BB_POP_LSB(pushPromotions);
+                CREATE_PROMOTIONS(moves, movec, dest + 8, dest);
+            }
+
+            while (lPromotions) {
+                int dest = BB_POP_LSB(lPromotions);
+                CREATE_PROMOTIONS(moves, movec, dest + 7, dest);
+            }
+
+            while (rPromotions) {
+                int dest = BB_POP_LSB(rPromotions);
+                CREATE_PROMOTIONS(moves, movec, dest + 9, dest);
+            }
+        }
+
+        if (epFile >= 0) {
+            Bitboard epDest = ((SQUARE_24 << epFile) & ~(neswPins | nwsePins) & checkMask) >> 8;
+
+            Bitboard lEpDest = ((pawns & NOT_FILE_8_MASK & ~(nsPins | neswPins)) >> 7) & epDest;
+            Bitboard rEpDest = ((pawns & NOT_FILE_1_MASK & ~(nsPins | nwsePins)) >> 9) & epDest;
+
+            if (lEpDest) {
+                int dest = BB_GET_LSB(lEpDest);
+                int origin = dest + 7;
+                
+                Bitboard afterEp = board->bitboard ^ ((1ULL << origin) | (1ULL << (dest + 8))) ^ lEpDest;
+
+                //Find discovered checkers, if any
+                Bitboard discoveredCheckers = (PIECE_BITBOARD(board, WHITE_QUEEN) | PIECE_BITBOARD(board, WHITE_ROOK)) & MHT_GET_VALUE(slidingMHTs[kingPos], slidingMoves[kingPos] & afterEp);
+
+                //Ensure the king will not be in check after taking ep
+                if(discoveredCheckers == 0)
+                    moves[movec ++] = CREATE_MOVE(origin, dest, EP_CAPTURE);
+            }
+
+            if (rEpDest) {
+                int dest = BB_GET_LSB(rEpDest);
+                int origin = dest + 9;
+                
+                Bitboard afterEp = board->bitboard ^ ((1ULL << origin) | (1ULL << (dest + 8))) ^ rEpDest;
+
+                //Find discovered checkers, if any
+                Bitboard discoveredCheckers = (PIECE_BITBOARD(board, WHITE_QUEEN) | PIECE_BITBOARD(board, WHITE_ROOK)) & MHT_GET_VALUE(slidingMHTs[kingPos], slidingMoves[kingPos] & afterEp);
+
+                //Ensure the king will not be in check after taking ep
+                if(discoveredCheckers == 0)
+                    moves[movec ++] = CREATE_MOVE(origin, dest, EP_CAPTURE);
+            }
+        }
+
+    Bitboard knights = KNIGHTS(board, turn) & ~allPins;
+    while (knights) {
+        int origin = BB_POP_LSB(knights);
+        Bitboard moveBitboard = knightMoves[origin] & notOurColor & checkMask;
+
+        while (moveBitboard) {
+            int dest = BB_POP_LSB(moveBitboard);
+            moves[movec ++] = CREATE_MOVE(origin, dest, QUIET); 
+        }
+    }
+
+    Bitboard sliders = ROOKS(board, turn) | QUEENS(board, turn);
+    Bitboard pinnedSliders = sliders & hvPins;
+    Bitboard unpinnedSliders = sliders & ~allPins;
+
+    while (pinnedSliders) {
+        int origin = BB_POP_LSB(pinnedSliders);
+        Bitboard blockers = slidingMoves[origin] & board->bitboard;
+        Bitboard moveBitboard = MHT_GET_VALUE(slidingMHTs[origin], blockers) & notOurColor & checkMask & slidingMovesWithLast[kingPos];
+
+        while (moveBitboard) {
+            int dest = BB_POP_LSB(moveBitboard);
+            moves[movec ++] = CREATE_MOVE(origin, dest, QUIET);
+        }
+    }
+
+    while (unpinnedSliders) {
+        int origin = BB_POP_LSB(unpinnedSliders);
+        Bitboard blockers = slidingMoves[origin] & board->bitboard;
+        Bitboard moveBitboard = MHT_GET_VALUE(slidingMHTs[origin], blockers) & notOurColor & checkMask;
+
+        while (moveBitboard) {
+            int dest = BB_POP_LSB(moveBitboard);
+            moves[movec ++] = CREATE_MOVE(origin, dest, QUIET);
+        }
+    }
+    
+    
+    Bitboard diagonals = BISHOPS(board, turn) | QUEENS(board, turn);
+    Bitboard pinnedDiagonals = diagonals & diagPins;
+    Bitboard unpinnedDiagonals = diagonals & ~allPins;
+
+    while (pinnedDiagonals) {
+        int origin = BB_POP_LSB(pinnedDiagonals);
+        Bitboard blockers = diagonalMoves[origin] & board->bitboard;
+        Bitboard moveBitboard = MHT_GET_VALUE(diagonalMHTs[origin], blockers) & notOurColor & checkMask & diagonalMovesWithLast[kingPos];
+
+        while (moveBitboard) {
+            int dest = BB_POP_LSB(moveBitboard);
+            moves[movec ++] = CREATE_MOVE(origin, dest, QUIET);
+        }
+    }
+
+    while (unpinnedDiagonals) {
+        int origin = BB_POP_LSB(unpinnedDiagonals);
+        Bitboard blockers = diagonalMoves[origin] & board->bitboard;
+        Bitboard moveBitboard = MHT_GET_VALUE(diagonalMHTs[origin], blockers) & notOurColor & checkMask;
+
+        while (moveBitboard) {
+            int dest = BB_POP_LSB(moveBitboard);
+            moves[movec ++] = CREATE_MOVE(origin, dest, QUIET);
+        }
+    }
+
+    //We cannot castle out of check
+    if(numCheckers == 0) {
+        //We cannot castle through squares that are either attacked or occupied
+        bb = attackedSquares | board->bitboard;
+        if(turn == WHITE) {
+            if(HAS_CASTLE_RIGHT(board, WHITE_CASTLE_KINGSIDE_RIGHT) && (bb & WHITE_KINGSIDE_CASTLE_MASK) == 0)
+                moves[movec++] = CREATE_MOVE(4, 6, KINGSIDE_CASTLE);
+            //For queenside castling, we must also check that the rook's path is not blocked
+            if(HAS_CASTLE_RIGHT(board, WHITE_CASTLE_QUEENSIDE_RIGHT) && ((bb & WHITE_QUEENSIDE_CASTLE_MASK) | (board->bitboard & (1ULL << 1))) == 0)
+                moves[movec++] = CREATE_MOVE(4, 2, QUEENSIDE_CASTLE);
+        } else if(turn == BLACK) {
+            if(HAS_CASTLE_RIGHT(board, BLACK_CASTLE_KINGSIDE_RIGHT) && (bb & BLACK_KINGSIDE_CASTLE_MASK) == 0)
+                moves[movec++] = CREATE_MOVE(60, 62, KINGSIDE_CASTLE);
+            if(HAS_CASTLE_RIGHT(board, BLACK_CASTLE_QUEENSIDE_RIGHT) && ((bb & BLACK_QUEENSIDE_CASTLE_MASK) | (board->bitboard & (1ULL << 57))) == 0)
+                moves[movec++] = CREATE_MOVE(60, 58, QUEENSIDE_CASTLE);
+        }
+    }
+
+    return movec;
+}

@@ -27,13 +27,10 @@ unsigned long micros(void) {
     return 1000000 * tv.tv_sec + tv.tv_usec;
 }
 
-/*template<turn: WHITE | BLACK>*/
-long r_perft(Board *board, int depth, int originalDepth) {
+long r_perft_t58A37877(Board *board, int depth, int originalDepth) {
     Move moves[MG_MAX_MOVES];
 
-    /*use<mg_gen>*/
-    /*set<turn: turn$>*/
-    int movec = mg_gen(board, moves);
+    int movec = mg_gen_t4FC832A0(board, moves);
     
     movesGenerated += movec;
 
@@ -45,15 +42,11 @@ long r_perft(Board *board, int depth, int originalDepth) {
     for (int i = 0; i < movec; i ++) {
         MoveResult result = MOVE_RESULT(moves[i], board);
 
-        /*use<mv_make>*/
-        /*set<turn: turn$>*/
-        mv_make(moves[i], board);
+        mv_make_tA9984799(moves[i], board);
 
         long n = 0;
 
-        /*use<r_perft>*/
-        /*set<turn: turn$(WHITE -> BLACK | BLACK -> WHITE)>*/
-        n = r_perft(board, depth - 1, originalDepth);
+        n = r_perft_tCC45A78A(board, depth - 1, originalDepth);
 
         if (depth == originalDepth) {
             char str[LAN_MAX_SIZE];
@@ -63,14 +56,45 @@ long r_perft(Board *board, int depth, int originalDepth) {
 
         numPositions += n;
 
-        /*use<mv_unmake>*/
-        /*set<turn: turn$>*/
-        mv_unmake(&result, board);
+        mv_unmake_t9E9FC584(&result, board);
     }
 
     return numPositions;
 }
-/*endtemplate*/
+long r_perft_tCC45A78A(Board *board, int depth, int originalDepth) {
+    Move moves[MG_MAX_MOVES];
+
+    int movec = mg_gen_t1A9921E3(board, moves);
+    
+    movesGenerated += movec;
+
+    if (depth == 1) 
+        return movec;
+
+    long numPositions = 0;
+
+    for (int i = 0; i < movec; i ++) {
+        MoveResult result = MOVE_RESULT(moves[i], board);
+
+        mv_make_tE19B4D14(moves[i], board);
+
+        long n = 0;
+
+        n = r_perft_t58A37877(board, depth - 1, originalDepth);
+
+        if (depth == originalDepth) {
+            char str[LAN_MAX_SIZE];
+            mv_toLAN(moves[i], str);
+            printf("%s: %ld\n", str, n);
+        }
+
+        numPositions += n;
+
+        mv_unmake_t96A0C15E(&result, board);
+    }
+
+    return numPositions;
+}
 
 int perft(Board *board, int depth) {
     movesGenerated = 0;
@@ -78,13 +102,10 @@ int perft(Board *board, int depth) {
     long startTime = micros();
     long numPositions = 0;
 
-    /*use<r_perft>*/
     if (TURN(board) == WHITE) {
-        /*set<turn: WHITE>*/
-        numPositions = r_perft(board, depth, depth);
+        numPositions = r_perft_t58A37877(board, depth, depth);
     } else {
-        /*set<turn: BLACK>*/
-        numPositions = r_perft(board, depth, depth);
+        numPositions = r_perft_tCC45A78A(board, depth, depth);
     }
 
     long timeSpent = micros() - startTime;
