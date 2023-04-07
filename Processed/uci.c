@@ -42,9 +42,9 @@ void cmd_go(char **args) {
     int movec;
 
     if (TURN(&board) == WHITE) {
-        movec = mg_gen_t39E5CDBB(&board, moves);
+        movec = mg_gen_t93FD4A05(&board, moves);
     } else {
-        movec = mg_gen_tF036FC27(&board, moves);
+        movec = mg_gen_t4AF09007(&board, moves);
     }
     Move move = moves[rand() % movec];
     char lan[LAN_MAX_SIZE];
@@ -71,9 +71,9 @@ void cmd_position(char **args, int argc) {
     if (nextArg < argc && strcmp(args[nextArg], "moves") == 0) {
         for (int i = nextArg + 1; i < argc; i ++) {
             if (TURN(&board) == WHITE)
-                mv_make_t0FAA742F(mv_fromLAN(&board, args[i]), &board);
+                mv_make_tC0C2C1FB(mv_fromLAN(&board, args[i]), &board);
             else
-                mv_make_t3D5D53C5(mv_fromLAN(&board, args[i]), &board);
+                mv_make_t2EDC630E(mv_fromLAN(&board, args[i]), &board);
         }
     }
 }
@@ -81,9 +81,9 @@ void cmd_position(char **args, int argc) {
 void cmd_move(char** args) {
     Move move = mv_fromLAN(&board, args[1]);
     if (TURN(&board) == WHITE)
-        mv_make_t0FAA742F(move, &board);
+        mv_make_tC0C2C1FB(move, &board);
     else
-        mv_make_t3D5D53C5(move, &board);
+        mv_make_t2EDC630E(move, &board);
 }
 
 void cmd_perft(char **args) {

@@ -362,7 +362,7 @@ void mg_init(void) {
     }
 }
 
-int mg_gen_t39E5CDBB(Board *board, Move *moves) {
+int mg_gen_t93FD4A05(Board *board, Move *moves) {
     int turn = TURN(board);
     int oppTurn = 1 - turn;
     int movec = 0;
@@ -676,7 +676,7 @@ int mg_gen_t39E5CDBB(Board *board, Move *moves) {
 
     return movec;
 }
-int mg_gen_tF036FC27(Board *board, Move *moves) {
+int mg_gen_t4AF09007(Board *board, Move *moves) {
     int turn = TURN(board);
     int oppTurn = 1 - turn;
     int movec = 0;

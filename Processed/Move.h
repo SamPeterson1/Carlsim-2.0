@@ -82,7 +82,7 @@ void mv_init(void);
 #define BLACK_ROOK_QUEENSIDE_CASTLE_BB ((1ULL << 59) | (1ULL << 56))
 #define BLACK_QUEENSIDE_CASTLE_BB (BLACK_KING_QUEENSIDE_CASTLE_BB | BLACK_ROOK_QUEENSIDE_CASTLE_BB)
 
-static inline void mv_make_t0FAA742F(Move move, Board *board) {
+static inline void mv_make_tC0C2C1FB(Move move, Board *board) {
     int origin = MOVE_ORIGIN(move);
     int dest = MOVE_DEST(move);
     int special = MOVE_SPECIAL(move);
@@ -210,7 +210,7 @@ static inline void mv_make_t0FAA742F(Move move, Board *board) {
     #undef TURN_KINGSIDE_CASTLE_BB
     #undef TURN_QUEENSIDE_CASTLE_BB
 }
-static inline void mv_make_t3D5D53C5(Move move, Board *board) {
+static inline void mv_make_t2EDC630E(Move move, Board *board) {
     int origin = MOVE_ORIGIN(move);
     int dest = MOVE_DEST(move);
     int special = MOVE_SPECIAL(move);
@@ -339,7 +339,7 @@ static inline void mv_make_t3D5D53C5(Move move, Board *board) {
     #undef TURN_QUEENSIDE_CASTLE_BB
 }
 
-static inline void mv_unmake_t6C5E82C9(MoveResult *result, Board *board) {
+static inline void mv_unmake_t20B32B38(MoveResult *result, Board *board) {
     int origin = MOVE_ORIGIN(result->move);
     int dest = MOVE_DEST(result->move);
     int special = MOVE_SPECIAL(result->move);
@@ -450,7 +450,7 @@ static inline void mv_unmake_t6C5E82C9(MoveResult *result, Board *board) {
     #undef TURN_KINGSIDE_CASTLE_BB
     #undef TURN_QUEENSIDE_CASTLE_BB
 }
-static inline void mv_unmake_tF229BC95(MoveResult *result, Board *board) {
+static inline void mv_unmake_t4F2F42F3(MoveResult *result, Board *board) {
     int origin = MOVE_ORIGIN(result->move);
     int dest = MOVE_DEST(result->move);
     int special = MOVE_SPECIAL(result->move);

@@ -27,10 +27,10 @@ unsigned long micros(void) {
     return 1000000 * tv.tv_sec + tv.tv_usec;
 }
 
-long r_perft_tEE0A6BA6(Board *board, int depth, int originalDepth) {
+long r_perft_t80F59E0F(Board *board, int depth, int originalDepth) {
     Move moves[MG_MAX_MOVES];
 
-    int movec = mg_gen_t39E5CDBB(board, moves);
+    int movec = mg_gen_t93FD4A05(board, moves);
     
     movesGenerated += movec;
 
@@ -42,11 +42,11 @@ long r_perft_tEE0A6BA6(Board *board, int depth, int originalDepth) {
     for (int i = 0; i < movec; i ++) {
         MoveResult result = MOVE_RESULT(moves[i], board);
 
-        mv_make_t0FAA742F(moves[i], board);
+        mv_make_tC0C2C1FB(moves[i], board);
 
         long n = 0;
 
-        n = r_perft_t07EC5669(board, depth - 1, originalDepth);
+        n = r_perft_t816C288F(board, depth - 1, originalDepth);
 
         if (depth == originalDepth) {
             char str[LAN_MAX_SIZE];
@@ -56,15 +56,15 @@ long r_perft_tEE0A6BA6(Board *board, int depth, int originalDepth) {
 
         numPositions += n;
 
-        mv_unmake_t6C5E82C9(&result, board);
+        mv_unmake_t20B32B38(&result, board);
     }
 
     return numPositions;
 }
-long r_perft_t07EC5669(Board *board, int depth, int originalDepth) {
+long r_perft_t816C288F(Board *board, int depth, int originalDepth) {
     Move moves[MG_MAX_MOVES];
 
-    int movec = mg_gen_tF036FC27(board, moves);
+    int movec = mg_gen_t4AF09007(board, moves);
     
     movesGenerated += movec;
 
@@ -76,11 +76,11 @@ long r_perft_t07EC5669(Board *board, int depth, int originalDepth) {
     for (int i = 0; i < movec; i ++) {
         MoveResult result = MOVE_RESULT(moves[i], board);
 
-        mv_make_t3D5D53C5(moves[i], board);
+        mv_make_t2EDC630E(moves[i], board);
 
         long n = 0;
 
-        n = r_perft_tEE0A6BA6(board, depth - 1, originalDepth);
+        n = r_perft_t80F59E0F(board, depth - 1, originalDepth);
 
         if (depth == originalDepth) {
             char str[LAN_MAX_SIZE];
@@ -90,7 +90,7 @@ long r_perft_t07EC5669(Board *board, int depth, int originalDepth) {
 
         numPositions += n;
 
-        mv_unmake_tF229BC95(&result, board);
+        mv_unmake_t4F2F42F3(&result, board);
     }
 
     return numPositions;
@@ -103,9 +103,9 @@ int perft(Board *board, int depth) {
     long numPositions = 0;
 
     if (TURN(board) == WHITE) {
-        numPositions = r_perft_tEE0A6BA6(board, depth, depth);
+        numPositions = r_perft_t80F59E0F(board, depth, depth);
     } else {
-        numPositions = r_perft_t07EC5669(board, depth, depth);
+        numPositions = r_perft_t816C288F(board, depth, depth);
     }
 
     long timeSpent = micros() - startTime;
