@@ -32,6 +32,7 @@ typedef struct Board_s {
     // Bit 8 is turn
     // Bits 9-15 is halfmove counter
     uint16_t gameState;
+    int mateStatus;
 
     Piece pieces[64];
 
@@ -42,6 +43,9 @@ typedef struct Board_s {
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
+
+#define TRUE 1
+#define FALSE 0
 
 #define WHITE 0
 #define BLACK 1

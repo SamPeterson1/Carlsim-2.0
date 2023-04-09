@@ -38,21 +38,18 @@ void cmd_isready(void) {
 }
 
 void cmd_go(char **args) {
-    Move moves[MG_MAX_MOVES];
-    int movec;
+    Move bestMove;
 
+    /*use<findBestMove>*/
     if (TURN(&board) == WHITE) {
-        /*use<mg_gen>*/
         /*set<turn: WHITE>*/
-        movec = mg_gen(&board, moves);
+        bestMove = findBestMove(&board, 6);
     } else {
-        /*use<mg_gen>*/
         /*set<turn: BLACK>*/
-        movec = mg_gen(&board, moves);
+        bestMove = findBestMove(&board, 6);
     }
-    Move move = moves[rand() % movec];
     char lan[LAN_MAX_SIZE];
-    mv_toLAN(move, lan);
+    mv_toLAN(bestMove, lan);
 
     printf("bestmove %s\n", lan);
 }

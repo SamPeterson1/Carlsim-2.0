@@ -16,13 +16,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <string.h>
-#include <stdlib.h>
+#include "Board.h"
+#include "Move.h"
+#include "Movegen.h"
+#include "Eval.h"
 
-#define TRUE 1
-#define FALSE 0
-#define MAX_ARG_COUNT 256
-#define MAX_ARG_LENGTH 256
+/*template<turn: WHITE | BLACK>*/
+Move findBestMove(Board *board, int depth);
+/*endtemplate*/
 
-char **initBuffer(void);
-void parse(const char *str, char **args, int *argc);
+/*template<turn: WHITE | BLACK>*/
+int negamax(Board *board, int depth, int alpha, int beta);
+/*endtemplate*/
+
+
+/*template<turn: WHITE | BLACK>*/
+int quiescense(Board *board, int alpha, int beta, int d);
+/*endtemplate*/

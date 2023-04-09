@@ -362,11 +362,21 @@ void mg_init(void) {
     }
 }
 
-/*template<turn: WHITE | BLACK>*/
+/*template<turn: WHITE | BLACK, genType: CAPTURES | ALL>*/
 int mg_gen(Board *board, Move *moves) {
+    /*if<genType: ALL>*/
+    board->mateStatus = NO_MATE;
+    /*endif*/
+
     int turn = TURN(board);
     int oppTurn = 1 - turn;
     int movec = 0;
+
+    /*if<genType: CAPTURES>*/
+    Bitboard captureMask = board->colorBitboards[oppTurn];
+    /*elif<genType: ALL>*/
+    Bitboard captureMask = BB_FULL_BOARD;
+    /*endif*/
 
     Bitboard king = KINGS(board, turn);
     Bitboard withoutKing = board->bitboard ^ king;
@@ -421,7 +431,7 @@ int mg_gen(Board *board, Move *moves) {
     checkers |= MHT_GET_VALUE(slidingMHTs[kingPos], slidingMoves[kingPos] & board->bitboard) & oppSliders; //Add sliding checkers
     
     //Generate legal king moves - the king cannot move onto an attacked square or capture its own color piece
-    bb = kingMoves[kingPos] & ~attackedSquares & ~board->colorBitboards[turn];
+    bb = kingMoves[kingPos] & ~attackedSquares & ~board->colorBitboards[turn] & captureMask;
     while (bb) {
         int dest = BB_POP_LSB(bb);
         moves[movec ++] = CREATE_MOVE(kingPos, dest, QUIET);
@@ -430,7 +440,14 @@ int mg_gen(Board *board, Move *moves) {
     int numCheckers = BB_POP_COUNT(checkers);
 
     //If we are in double check, the only legal moves are the king moves just generated
-    if (numCheckers == 2) return movec;
+    if (numCheckers == 2) {
+        /*if<genType: ALL>*/
+        if (movec == 0) 
+            board->mateStatus = CHECKMATE;
+        /*endif*/
+
+        return movec;
+    }
     
     //Generate pinned pieces
 
@@ -465,19 +482,22 @@ int mg_gen(Board *board, Move *moves) {
     Bitboard neswPins = diagonalPins & neswMoves[kingPos];
     Bitboard nwsePins = diagonalPins ^ neswPins;
 
-    //The check mask consists of all of the legal moves that stop a check (full board if the king is not in check)
+    //The move mask consists of all of the legal moves that stop a check (full board if the king is not in check) AND fit the desired move generation type
     //This does not include check evasions, which have been generated previously
+    Bitboard moveMask = captureMask;
     Bitboard checkMask = BB_FULL_BOARD;
     
     if(numCheckers == 1) {
         if (checkers & (oppSliders | oppDiagonals)) {
-            //If we are attacked by a sliding or diagonal piece, the check mask is a ray from the king to the piece, inclusive
+            //If we are attacked by a sliding or diagonal piece, the move mask is a ray from the king to the piece, inclusive
             checkMask = pinRays[kingPos][BB_GET_LSB(checkers)];
         } else {
             //If we are attacked by any other piece, we can only capture it
             checkMask = checkers;
         }
     }
+
+    moveMask &= checkMask;
 
     Bitboard emptySquares = ~board->bitboard;
     Bitboard notOurColor = ~board->colorBitboards[turn];
@@ -490,28 +510,10 @@ int mg_gen(Board *board, Move *moves) {
         Bitboard pawnsOn7 = pawns & RANK_7_MASK;
         pawns ^= pawnsOn7;
 
-        //Pawns can only be pushed to empty squares if they are not pinned diagonally
-        Bitboard bb1 = ((pawns & ~(neswPins | nwsePins)) << 8) & emptySquares;
-        //Pawns can only be double pushed to empty squares in the fourth rank if they can be single pushed
-        Bitboard bb2 = (bb1 << 8) & emptySquares & RANK_4_MASK & checkMask;
-        bb1 &= checkMask;
-        
-        //Single pawn pushes
-        while (bb1) {
-            int dest = BB_POP_LSB(bb1);
-            moves[movec ++] = CREATE_MOVE(dest - 8, dest, QUIET);
-        }
-
-        //Double pawn pushes
-        while (bb2) {
-            int dest = BB_POP_LSB(bb2);
-            moves[movec ++] = CREATE_MOVE(dest - 16, dest, DOUBLE_PAWN_PUSH);
-        }
-
         //Pawns not on file 1 can left capture a black piece if they are not pinned vertically or ne-sw diagonally
-        bb1 = ((pawns & NOT_FILE_1_MASK & ~(nsPins | neswPins)) << 7) & board->colorBitboards[BLACK] & checkMask;
+        Bitboard bb1 = ((pawns & NOT_FILE_1_MASK & ~(nsPins | neswPins)) << 7) & board->colorBitboards[BLACK] & moveMask;
         //Pawns not on file 8 can right capture a black piece if they are not pinned verticaly or nw-se diagonally
-        bb2 = ((pawns & NOT_FILE_8_MASK & ~(nsPins | nwsePins)) << 9) & board->colorBitboards[BLACK] & checkMask;
+        Bitboard bb2 = ((pawns & NOT_FILE_8_MASK & ~(nsPins | nwsePins)) << 9) & board->colorBitboards[BLACK] & moveMask;
 
         //Left pawn captures
         while (bb1) {
@@ -525,11 +527,29 @@ int mg_gen(Board *board, Move *moves) {
             moves[movec ++] = CREATE_MOVE(dest - 9, dest, QUIET);
         }
 
+        //Pawns can only be pushed to empty squares if they are not pinned diagonally
+        bb1 = ((pawns & ~(neswPins | nwsePins)) << 8) & emptySquares;
+        //Pawns can only be double pushed to empty squares in the fourth rank if they can be single pushed
+        bb2 = (bb1 << 8) & emptySquares & RANK_4_MASK & moveMask;
+        bb1 &= moveMask;
+        
+        //Double pawn pushes
+        while (bb2) {
+            int dest = BB_POP_LSB(bb2);
+            moves[movec ++] = CREATE_MOVE(dest - 16, dest, DOUBLE_PAWN_PUSH);
+        }
+
+        //Single pawn pushes
+        while (bb1) {
+            int dest = BB_POP_LSB(bb1);
+            moves[movec ++] = CREATE_MOVE(dest - 8, dest, QUIET);
+        }
+
         //Only generate promotions if there are pawns able to promote
         if (pawnsOn7) {
             //Same logic as above, but only for pawns on rank 7
-            bb1 = ((pawnsOn7 & NOT_FILE_1_MASK & ~(nsPins | neswPins)) << 7) & board->colorBitboards[BLACK] & checkMask;
-            bb2 = ((pawnsOn7 & NOT_FILE_8_MASK & ~(nsPins | nwsePins)) << 9) & board->colorBitboards[BLACK] & checkMask;
+            bb1 = ((pawnsOn7 & NOT_FILE_1_MASK & ~(nsPins | neswPins)) << 7) & board->colorBitboards[BLACK] & moveMask;
+            bb2 = ((pawnsOn7 & NOT_FILE_8_MASK & ~(nsPins | nwsePins)) << 9) & board->colorBitboards[BLACK] & moveMask;
 
             //Left capture promotions
             while (bb1) {
@@ -543,7 +563,7 @@ int mg_gen(Board *board, Move *moves) {
                 CREATE_PROMOTIONS(moves, movec, dest - 9, dest);
             }
 
-            bb1 = ((pawnsOn7 & ~(neswPins | nwsePins)) << 8) & ~board->bitboard & checkMask;
+            bb1 = ((pawnsOn7 & ~(neswPins | nwsePins)) << 8) & ~board->bitboard & moveMask;
 
             //Push promotions            
             while (bb1) {
@@ -595,21 +615,11 @@ int mg_gen(Board *board, Move *moves) {
         pawns ^= pawnsOn2;
 
         Bitboard singlePushes = ((pawns & ~(neswPins | nwsePins)) >> 8) & emptySquares;
-        Bitboard doublePushes = (singlePushes >> 8) & emptySquares & RANK_5_MASK & checkMask;
-        singlePushes &= checkMask;
+        Bitboard doublePushes = (singlePushes >> 8) & emptySquares & RANK_5_MASK & moveMask;
+        singlePushes &= moveMask;
 
-        Bitboard lCaptures = ((pawns & NOT_FILE_8_MASK & ~(nsPins | neswPins)) >> 7) & board->colorBitboards[WHITE] & checkMask;
-        Bitboard rCaptures = ((pawns & NOT_FILE_1_MASK & ~(nsPins | nwsePins)) >> 9) & board->colorBitboards[WHITE] & checkMask;
-
-        while (singlePushes) {
-            int dest = BB_POP_LSB(singlePushes);
-            moves[movec ++] = CREATE_MOVE(dest + 8, dest, QUIET);
-        }
-
-        while (doublePushes) {
-            int dest = BB_POP_LSB(doublePushes);
-            moves[movec ++] = CREATE_MOVE(dest + 16, dest, DOUBLE_PAWN_PUSH);
-        }
+        Bitboard lCaptures = ((pawns & NOT_FILE_8_MASK & ~(nsPins | neswPins)) >> 7) & board->colorBitboards[WHITE] & moveMask;
+        Bitboard rCaptures = ((pawns & NOT_FILE_1_MASK & ~(nsPins | nwsePins)) >> 9) & board->colorBitboards[WHITE] & moveMask;
 
         while (lCaptures) {
             int dest = BB_POP_LSB(lCaptures);
@@ -621,10 +631,20 @@ int mg_gen(Board *board, Move *moves) {
             moves[movec ++] = CREATE_MOVE(dest + 9, dest, QUIET);
         }
 
+        while (doublePushes) {
+            int dest = BB_POP_LSB(doublePushes);
+            moves[movec ++] = CREATE_MOVE(dest + 16, dest, DOUBLE_PAWN_PUSH);
+        }
+
+        while (singlePushes) {
+            int dest = BB_POP_LSB(singlePushes);
+            moves[movec ++] = CREATE_MOVE(dest + 8, dest, QUIET);
+        }
+
         if (pawnsOn2) {
-            Bitboard pushPromotions = ((pawnsOn2 & ~(neswPins | nwsePins)) >> 8) & emptySquares & checkMask;
-            Bitboard lPromotions = ((pawnsOn2 & NOT_FILE_8_MASK & ~(nsPins | neswPins)) >> 7) & board->colorBitboards[WHITE] & checkMask;
-            Bitboard rPromotions = ((pawnsOn2 & NOT_FILE_1_MASK & ~(nsPins | nwsePins)) >> 9) & board->colorBitboards[WHITE] & checkMask;
+            Bitboard pushPromotions = ((pawnsOn2 & ~(neswPins | nwsePins)) >> 8) & emptySquares & moveMask;
+            Bitboard lPromotions = ((pawnsOn2 & NOT_FILE_8_MASK & ~(nsPins | neswPins)) >> 7) & board->colorBitboards[WHITE] & moveMask;
+            Bitboard rPromotions = ((pawnsOn2 & NOT_FILE_1_MASK & ~(nsPins | nwsePins)) >> 9) & board->colorBitboards[WHITE] & moveMask;
 
             while (pushPromotions) {
                 int dest = BB_POP_LSB(pushPromotions);
@@ -684,7 +704,7 @@ int mg_gen(Board *board, Move *moves) {
     Bitboard knights = KNIGHTS(board, turn) & ~allPins;
     while (knights) {
         int origin = BB_POP_LSB(knights);
-        Bitboard moveBitboard = knightMoves[origin] & notOurColor & checkMask;
+        Bitboard moveBitboard = knightMoves[origin] & notOurColor & moveMask;
 
         while (moveBitboard) {
             int dest = BB_POP_LSB(moveBitboard);
@@ -703,7 +723,7 @@ int mg_gen(Board *board, Move *moves) {
         Bitboard blockers = slidingMoves[origin] & board->bitboard;
 
         //Pinned sliders can only move along the pin ray
-        Bitboard moveBitboard = MHT_GET_VALUE(slidingMHTs[origin], blockers) & notOurColor & checkMask & slidingMovesWithLast[kingPos];
+        Bitboard moveBitboard = MHT_GET_VALUE(slidingMHTs[origin], blockers) & notOurColor & moveMask & slidingMovesWithLast[kingPos];
 
         while (moveBitboard) {
             int dest = BB_POP_LSB(moveBitboard);
@@ -715,7 +735,7 @@ int mg_gen(Board *board, Move *moves) {
     while (unpinnedSliders) {
         int origin = BB_POP_LSB(unpinnedSliders);
         Bitboard blockers = slidingMoves[origin] & board->bitboard;
-        Bitboard moveBitboard = MHT_GET_VALUE(slidingMHTs[origin], blockers) & notOurColor & checkMask;
+        Bitboard moveBitboard = MHT_GET_VALUE(slidingMHTs[origin], blockers) & notOurColor & moveMask;
 
         while (moveBitboard) {
             int dest = BB_POP_LSB(moveBitboard);
@@ -731,7 +751,7 @@ int mg_gen(Board *board, Move *moves) {
     while (pinnedDiagonals) {
         int origin = BB_POP_LSB(pinnedDiagonals);
         Bitboard blockers = diagonalMoves[origin] & board->bitboard;
-        Bitboard moveBitboard = MHT_GET_VALUE(diagonalMHTs[origin], blockers) & notOurColor & checkMask & diagonalMovesWithLast[kingPos];
+        Bitboard moveBitboard = MHT_GET_VALUE(diagonalMHTs[origin], blockers) & notOurColor & moveMask & diagonalMovesWithLast[kingPos];
 
         while (moveBitboard) {
             int dest = BB_POP_LSB(moveBitboard);
@@ -742,7 +762,7 @@ int mg_gen(Board *board, Move *moves) {
     while (unpinnedDiagonals) {
         int origin = BB_POP_LSB(unpinnedDiagonals);
         Bitboard blockers = diagonalMoves[origin] & board->bitboard;
-        Bitboard moveBitboard = MHT_GET_VALUE(diagonalMHTs[origin], blockers) & notOurColor & checkMask;
+        Bitboard moveBitboard = MHT_GET_VALUE(diagonalMHTs[origin], blockers) & notOurColor & moveMask;
 
         while (moveBitboard) {
             int dest = BB_POP_LSB(moveBitboard);
@@ -750,6 +770,7 @@ int mg_gen(Board *board, Move *moves) {
         }
     }
 
+    /*if<genType: ALL>*/
     //We cannot castle out of check
     if(numCheckers == 0) {
         //We cannot castle through squares that are either attacked or occupied
@@ -766,7 +787,13 @@ int mg_gen(Board *board, Move *moves) {
             if(HAS_CASTLE_RIGHT(board, BLACK_CASTLE_QUEENSIDE_RIGHT) && ((bb & BLACK_QUEENSIDE_CASTLE_MASK) | (board->bitboard & (1ULL << 57))) == 0)
                 moves[movec++] = CREATE_MOVE(60, 58, QUEENSIDE_CASTLE);
         }
+        
+        if (movec == 0)
+            board->mateStatus = STALEMATE;
+    } else if (movec == 0) {
+        board->mateStatus = CHECKMATE;
     }
+    /*endif*/
 
     return movec;
 }

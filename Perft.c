@@ -32,18 +32,21 @@ long r_perft(Board *board, int depth, int originalDepth) {
     Move moves[MG_MAX_MOVES];
 
     /*use<mg_gen>*/
-    /*set<turn: turn$>*/
+    /*set<turn: turn$, genType: ALL>*/
     int movec = mg_gen(board, moves);
+    
     
     movesGenerated += movec;
 
-    if (depth == 1) 
+    if (depth < 1 && depth != originalDepth) 
         return movec;
-
+    int capc = 0;
     long numPositions = 0;
 
     for (int i = 0; i < movec; i ++) {
         MoveResult result = MOVE_RESULT(moves[i], board);
+        if (result.captured != PIECE_NONE || MOVE_SPECIAL(result.move) == EP_CAPTURE)
+            capc ++;
 
         /*use<mv_make>*/
         /*set<turn: turn$>*/

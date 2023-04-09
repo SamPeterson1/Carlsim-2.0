@@ -26,6 +26,8 @@ typedef uint16_t Move;
 
 #define LAN_MAX_SIZE 6
 
+#define MOVE_NONE 0
+
 #define QUIET 0
 #define DOUBLE_PAWN_PUSH 0x1000
 

@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Movegen.h"
 #include "Move.h"
 #include "Perft.h"
+#include "Search.h"
 #include <stdlib.h>
 
 int uci_exec(char *cmd);

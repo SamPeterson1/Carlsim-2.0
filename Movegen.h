@@ -27,6 +27,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define MG_MAX_MOVES 256
 
+#define NO_MATE 0
+#define CHECKMATE 1
+#define STALEMATE 2
+
 #define WHITE_KINGSIDE_CASTLE_MASK 0x60ULL
 #define WHITE_QUEENSIDE_CASTLE_MASK 0x0CULL
 #define BLACK_QUEENSIDE_CASTLE_MASK 0xC00000000000000ULL
@@ -44,9 +48,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define NORTHWEST 7
 #define NONE 8
 
+extern Bitboard pawnCaptures[2][64];
+
 void mg_init(void);
 
-/*template<turn: WHITE | BLACK>*/
+/*template<turn: WHITE | BLACK, genType: CAPTURES | ALL>*/
 int mg_gen(Board *board, Move *moves);
 /*endtemplate*/
 
