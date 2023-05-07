@@ -43,8 +43,6 @@ Piece pc_parse(char c) {
             break;
     }
 
-    printf("Char: %c, type: %d\n", c, type);
-
     int color = (c < 97) ? WHITE : BLACK;
 
     return color | type;

@@ -29,8 +29,10 @@ void cmd_uci(void) {
 
 void cmd_isready(void) {
     if (!hasInitialized) {
-        mg_init();
+        z_init();
         mv_init();
+        mg_init();
+
         hasInitialized = TRUE;
     }
 
@@ -43,15 +45,16 @@ void cmd_go(char **args) {
     /*use<findBestMove>*/
     if (TURN(&board) == WHITE) {
         /*set<turn: WHITE>*/
-        bestMove = findBestMove(&board, 6);
+        bestMove = findBestMove(&board, 5);
     } else {
         /*set<turn: BLACK>*/
-        bestMove = findBestMove(&board, 6);
+        bestMove = findBestMove(&board, 5);
     }
     char lan[LAN_MAX_SIZE];
     mv_toLAN(bestMove, lan);
 
     printf("bestmove %s\n", lan);
+    printf("readyok\n");
 }
 
 
@@ -80,6 +83,8 @@ void cmd_position(char **args, int argc) {
                 mv_make(mv_fromLAN(&board, args[i]), &board);
         }
     }
+
+    board.zobrist = z_getKey(&board);
 }
 
 void cmd_move(char** args) {
@@ -92,6 +97,12 @@ void cmd_move(char** args) {
         /*use<mv_make>*/
         /*set<turn: BLACK>*/
         mv_make(move, &board);
+
+    ZobristKey key = z_getKey(&board);
+    if(key != board.zobrist)
+        printf("Error. Keys don't match.\n");
+    
+    printf("Key: %ld\n", board.zobrist);
 }
 
 void cmd_perft(char **args) {

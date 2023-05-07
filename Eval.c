@@ -28,8 +28,8 @@ const int knights[2][64] = {
         -50,-40,-30,-30,-30,-30,-40,-50,
         -40,-20,  0,  0,  0,  0,-20,-40,
         -30,  0, 10, 15, 15, 10,  0,-30,
-        -30,  5, 15, 20, 20, 15,  5,-30,
-        -30,  0, 15, 20, 20, 15,  0,-30,
+        -30,  5, 15, 15, 15, 15,  5,-30,
+        -30,  0, 15, 15, 15, 15,  0,-30,
         -30,  5, 10, 15, 15, 10,  5,-30,
         -40,-20,  0,  5,  5,  0,-20,-40,
         -50,-40,-30,-30,-30,-30,-40,-50,
@@ -145,6 +145,8 @@ const int pieceValues[5] = {PAWN_VALUE, KNIGHT_VALUE, BISHOP_VALUE, ROOK_VALUE, 
 
 /*template<turn: WHITE | BLACK>*/
 int evalMove(Board *board, Move move) {
+    return 64 * MOVE_ORIGIN(move) + MOVE_DEST(move);
+
     int eval = 0;
     int dest =  MOVE_DEST(move);
     int origin =  MOVE_ORIGIN(move);
@@ -152,20 +154,20 @@ int evalMove(Board *board, Move move) {
     /*if<turn: WHITE>*/
         #define OUR_TURN WHITE
         #define OPP_TURN BLACK
+        #define OUR_PAWN WHITE_PAWN
     /*elif<turn: BLACK>*/
         #define OUR_TURN BLACK
         #define OPP_TURN WHITE
+        #define OUR_PAWN BLACK_PAWN
     /*endif*/
 
     //penalize moving to square attacked by opponent pawn
-    if(PIECE_TYPE(board->pieces[origin]) != PAWN && (pawnCaptures[dest][OUR_TURN] & PAWNS(board, OPP_TURN)) != 0) {
+    if(board->pieces[origin] != OUR_PAWN && (pawnCaptures[OUR_TURN][dest] & PAWNS(board, OPP_TURN)) != 0)
         eval -= pieceValues[PIECE_TYPE(board->pieces[origin])];
-    }
 
     //reward high-value captures with low-value pieces
-    if(board->pieces[dest] != PIECE_NONE) {
-        eval += 10*pieceValues[board->pieces[dest]] - pieceValues[board->pieces[origin]];
-    }
+    if(board->pieces[dest] != PIECE_NONE)
+        eval += 10 * pieceValues[board->pieces[dest]] - pieceValues[board->pieces[origin]];
 
     //reward promotions
     if(MOVE_IS_PROMOTION(move)) {
@@ -181,10 +183,9 @@ int evalMove(Board *board, Move move) {
         }
     }
 
-    if (PIECE_TYPE(board->pieces[origin]) == KING) eval -= 10;
-
     #undef OUR_TURN
     #undef OPP_TURN
+    #undef OUR_PAWN
 
     return eval;
 }
@@ -201,25 +202,25 @@ int evalPosition(Board *board) {
         pieces = PAWNS(board, turn);
         while(pieces) {
             int square = BB_POP_LSB(pieces);
-            sideEval += PAWN_VALUE + 3*(pawns[turn][square]/2);
+            sideEval += PAWN_VALUE + pawns[turn][square];
         }
 
         pieces = KNIGHTS(board, turn);
         while(pieces) {
             int square = BB_POP_LSB(pieces);
-            sideEval += KNIGHT_VALUE + 3*(knights[turn][square]/2);
+            sideEval += KNIGHT_VALUE + knights[turn][square];
         }
 
         pieces = BISHOPS(board, turn);
         while(pieces) {
             int square = BB_POP_LSB(pieces);
-            sideEval += BISHOP_VALUE + 3*(bishops[turn][square]/2);
+            sideEval += BISHOP_VALUE + bishops[turn][square];
         }
 
         pieces = ROOKS(board, turn);
         while(pieces) {
             int square = BB_POP_LSB(pieces);
-            sideEval += ROOK_VALUE + 3*(rooks[turn][square]/2);
+            sideEval += ROOK_VALUE + rooks[turn][square];
         }
 
         pieces = QUEENS(board, turn);

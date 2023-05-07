@@ -16,27 +16,33 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SEARCH_H
+#ifndef TRANSPOSITION_TABLE_H
 
-#define SEARCH_H
+#define TRANSPOSITION_TABLE_H
 
-#include "Board.h"
+#include "Log.h"
+#include "Zobrist.h"
 #include "Move.h"
-#include "Movegen.h"
-#include "Eval.h"
-#include "TranspositionTable.h"
 
-/*template<turn: WHITE | BLACK>*/
-Move findBestMove(Board *board, int depth);
-/*endtemplate*/
+#define TT_TABLE_SIZE (1ULL << 24)
 
-/*template<turn: WHITE | BLACK>*/
-int negamax(Board *board, int depth, int distFromRoot, int alpha, int beta);
-/*endtemplate*/
+#define ENTRY_EXACT 0
+#define ENTRY_ALPHA 1
+#define ENTRY_BETA 2
 
+#define TT_LOOKUP_FAILED -2147483647
 
-/*template<turn: WHITE | BLACK>*/
-int quiescense(Board *board, int alpha, int beta, int d);
-/*endtemplate*/
+typedef struct TTEntry_s {
+    ZobristKey key;
+    Move bestMove;
+
+    int eval;
+    int depth;
+    int type;
+} TTEntry;
+
+int tt_getEval(ZobristKey key, int alpha, int beta, int depth, Move *bestMove);
+void tt_storeEval(ZobristKey key, int eval, int depth, int evalType, Move move);
+void tt_storeMove(ZobristKey key, Move move, int depth);
 
 #endif

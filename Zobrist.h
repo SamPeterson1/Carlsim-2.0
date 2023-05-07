@@ -16,27 +16,26 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SEARCH_H
+#ifndef ZOBRIST_H
 
-#define SEARCH_H
+#define ZOBRIST_H
 
 #include "Board.h"
-#include "Move.h"
-#include "Movegen.h"
-#include "Eval.h"
-#include "TranspositionTable.h"
+#include <stdlib.h>
 
-/*template<turn: WHITE | BLACK>*/
-Move findBestMove(Board *board, int depth);
-/*endtemplate*/
+#define Z_WHITE_KINGSIDE_CASTLE 0
+#define Z_BLACK_KINGSIDE_CASTLE 1
+#define Z_WHITE_QUEENSIDE_CASTLE 2
+#define Z_BLACK_QUEENSIDE_CASTLE 3
 
-/*template<turn: WHITE | BLACK>*/
-int negamax(Board *board, int depth, int distFromRoot, int alpha, int beta);
-/*endtemplate*/
+extern ZobristKey g_zPieceSquareKeys[12][64];
+extern ZobristKey g_zBlackToMoveKey;
+extern ZobristKey g_zCastleKeys[4];
+extern ZobristKey g_zCastleRightKeys[16];
+extern ZobristKey g_zEpFileKeys[8];
 
-
-/*template<turn: WHITE | BLACK>*/
-int quiescense(Board *board, int alpha, int beta, int d);
-/*endtemplate*/
+void z_init(void);
+ZobristKey z_getKey(Board *board);
+int z_verify(Board *board);
 
 #endif

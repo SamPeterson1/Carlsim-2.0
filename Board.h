@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Piece.h"
 
 typedef uint_fast64_t Bitboard;
+typedef uint_fast64_t ZobristKey;
 
 typedef struct Board_s {
     // Bits 0-3 store white and black kingside/queenside castling legality
@@ -39,6 +40,8 @@ typedef struct Board_s {
     Bitboard pieceBitboards[12];
     Bitboard bitboard;
     Bitboard colorBitboards[2];
+
+    ZobristKey zobrist;
 } Board;
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -72,6 +75,7 @@ typedef struct Board_s {
 
 #define SET_TURN(board, turn) (board)->gameState = (((board)->gameState & 0xFEFF) | (turn << 8))
 #define HAS_CASTLE_RIGHT(board, castle) (((board)->gameState & castle) == castle)
+#define GET_CASTLE_RIGHTS(board) ((board)->gameState & 0x0F)
 #define EP_FILE(board) ((((board)->gameState >> 4) & 0x0F) - 1)
 #define HALFMOVE_COUNTER(board) ((board)->gameState >> 9)
 

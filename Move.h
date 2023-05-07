@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MOVE_H
 #include <stdint.h>
 #include "Board.h"
+#include "Zobrist.h"
 
 typedef uint16_t Move;
 
@@ -51,9 +52,10 @@ typedef uint16_t Move;
 #define MOVE_IS_CAPTURE(move) (((move) >> 14) & 1) //the capture flag is currently not being used
 #define MOVE_SPECIAL(move) ((move) & 0xF000)
 
-#define MOVE_RESULT(m, board) {.prevGameState = board->gameState, .captured = board->pieces[MOVE_DEST(m)], .move = (m)}
+#define MOVE_RESULT(m, board) {.prevZobrist = board->zobrist, .prevGameState = board->gameState, .captured = board->pieces[MOVE_DEST(m)], .move = (m)}
 
 typedef struct MoveResult_s {
+    ZobristKey prevZobrist;
     uint16_t prevGameState;
     Piece captured;
     Move move;
@@ -135,24 +137,34 @@ static inline void mv_make(Move move, Board *board) {
 
         board->pieceBitboards[piece] ^= moveBB;
 
+        board->zobrist ^= g_zPieceSquareKeys[piece][origin];
+        board->zobrist ^= g_zPieceSquareKeys[piece][dest];
+
         if (capture != PIECE_NONE) {
             board->bitboard ^= originBB;
             board->colorBitboards[OPP_TURN] ^= destBB;
             board->pieceBitboards[capture] ^= destBB; 
+
+            board->zobrist ^= g_zPieceSquareKeys[capture][dest];
         } else {
             board->bitboard ^= moveBB;
         }
-
+        
         board->pieces[origin] = PIECE_NONE;
         board->pieces[dest] = piece;
     } else if (special == DOUBLE_PAWN_PUSH) {
-        SET_EP_FILE(board, FILE(origin));
+        int epFile = FILE(origin);
+        SET_EP_FILE(board, epFile);
 
         Bitboard moveBB = (1ULL << origin) | (1ULL << dest);
         
         board->bitboard ^= moveBB;
         board->colorBitboards[OUR_TURN] ^= moveBB;
         board->pieceBitboards[TURN_PAWN] ^= moveBB;
+
+        board->zobrist ^= g_zPieceSquareKeys[TURN_PAWN][origin]; 
+        board->zobrist ^= g_zPieceSquareKeys[TURN_PAWN][dest];
+        board->zobrist ^= g_zEpFileKeys[epFile];
 
         board->pieces[origin] = PIECE_NONE;
         board->pieces[dest] = TURN_PAWN;
@@ -164,9 +176,13 @@ static inline void mv_make(Move move, Board *board) {
         board->pieceBitboards[TURN_ROOK] ^= TURN_ROOK_KINGSIDE_CASTLE_BB;
 
         /*if<turn: WHITE>*/
+            board->zobrist ^= g_zCastleKeys[Z_WHITE_KINGSIDE_CASTLE];
+
             board->pieces[6] = TURN_KING; board->pieces[4] = PIECE_NONE;
             board->pieces[5] = TURN_ROOK; board->pieces[7] = PIECE_NONE; 
         /*elif<turn: BLACK>*/
+            board->zobrist ^= g_zCastleKeys[Z_BLACK_KINGSIDE_CASTLE];
+
             board->pieces[62] = TURN_KING; board->pieces[60] = PIECE_NONE;
             board->pieces[61] = TURN_ROOK; board->pieces[63] = PIECE_NONE;
         /*endif*/
@@ -178,9 +194,13 @@ static inline void mv_make(Move move, Board *board) {
         board->pieceBitboards[TURN_ROOK] ^= TURN_ROOK_QUEENSIDE_CASTLE_BB;
 
         /*if<turn: WHITE>*/
+            board->zobrist ^= g_zCastleKeys[Z_WHITE_QUEENSIDE_CASTLE];
+
             board->pieces[2] = TURN_KING; board->pieces[4] = PIECE_NONE;
             board->pieces[3] = TURN_ROOK; board->pieces[0] = PIECE_NONE;
         /*elif<turn: BLACK>*/
+            board->zobrist ^= g_zCastleKeys[Z_BLACK_QUEENSIDE_CASTLE];
+
             board->pieces[58] = TURN_KING; board->pieces[60] = PIECE_NONE;
             board->pieces[59] = TURN_ROOK; board->pieces[56] = PIECE_NONE;
         /*endif*/
@@ -192,6 +212,12 @@ static inline void mv_make(Move move, Board *board) {
             Bitboard epPawn = SQUARE_24 << epFile;
         /*endif*/
 
+        int epSquare = BB_GET_LSB(epPawn);
+
+        board->zobrist ^= g_zPieceSquareKeys[TURN_PAWN][origin];
+        board->zobrist ^= g_zPieceSquareKeys[TURN_PAWN][dest];
+        board->zobrist ^= g_zPieceSquareKeys[OPP_TURN_PAWN][epSquare];
+
         board->bitboard ^= moveBB | epPawn;
 
         board->colorBitboards[OUR_TURN] ^= moveBB;
@@ -200,13 +226,16 @@ static inline void mv_make(Move move, Board *board) {
         board->pieceBitboards[TURN_PAWN] ^= moveBB;
         board->pieceBitboards[OPP_TURN_PAWN] ^= epPawn;
 
-        board->pieces[BB_GET_LSB(epPawn)] = PIECE_NONE;
+        board->pieces[epSquare] = PIECE_NONE;
         board->pieces[origin] = PIECE_NONE;
         board->pieces[dest] = TURN_PAWN;
     } else {
         Bitboard originBB = (1ULL << origin);
         Bitboard destBB = (1ULL << dest);
         Bitboard moveBB = originBB | destBB;
+
+        board->zobrist ^= g_zPieceSquareKeys[board->pieces[origin]][origin];
+        board->zobrist ^= g_zPieceSquareKeys[promotion][dest];
 
         board->colorBitboards[OUR_TURN] ^= moveBB;
 
@@ -215,6 +244,8 @@ static inline void mv_make(Move move, Board *board) {
 
         Piece capture = board->pieces[dest];
         if (capture != PIECE_NONE) {
+            board->zobrist ^= g_zPieceSquareKeys[capture][dest];
+
             board->bitboard ^= originBB;
             board->colorBitboards[OPP_TURN] ^= destBB;
             board->pieceBitboards[capture] ^= destBB; 
@@ -223,10 +254,17 @@ static inline void mv_make(Move move, Board *board) {
         }
 
         board->pieces[origin] = PIECE_NONE;
-        board->pieces[dest] = promotion;
+        board->pieces[dest] = promotion;   
     }
 
+    board->zobrist ^= g_zBlackToMoveKey;
+
+    if (epFile != -1)
+        board->zobrist ^= g_zEpFileKeys[epFile];
+
+    board->zobrist ^= g_zCastleRightKeys[GET_CASTLE_RIGHTS(board)];
     board->gameState &= castleRightMasks[origin] & castleRightMasks[dest];
+    board->zobrist ^= g_zCastleRightKeys[GET_CASTLE_RIGHTS(board)];
 
     CHANGE_TURN(board);
 
@@ -281,8 +319,9 @@ static inline void mv_unmake(MoveResult *result, Board *board) {
         #define TURN_QUEENSIDE_CASTLE_BB BLACK_QUEENSIDE_CASTLE_BB
     /*endif*/
 
+    board->zobrist = result->prevZobrist;
     board->gameState = result->prevGameState;
-    
+
     if (special == QUIET || special == DOUBLE_PAWN_PUSH) {
         Bitboard originBB = (1ULL << origin);
         Bitboard destBB = (1ULL << dest);
@@ -298,7 +337,7 @@ static inline void mv_unmake(MoveResult *result, Board *board) {
         if (capture != PIECE_NONE) {
             board->bitboard ^= originBB;
             board->colorBitboards[OPP_TURN] ^= destBB;
-            board->pieceBitboards[capture] ^= destBB; 
+            board->pieceBitboards[capture] ^= destBB;
         } else {
             board->bitboard ^= moveBB;
         }

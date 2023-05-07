@@ -16,27 +16,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SEARCH_H
+#ifndef TESTS_H
 
-#define SEARCH_H
+#define TESTS_H
 
-#include "Board.h"
-#include "Move.h"
-#include "Movegen.h"
-#include "Eval.h"
-#include "TranspositionTable.h"
+#include "assert.h"
 
-/*template<turn: WHITE | BLACK>*/
-Move findBestMove(Board *board, int depth);
-/*endtemplate*/
+#define USE_ASSERTS
 
-/*template<turn: WHITE | BLACK>*/
-int negamax(Board *board, int depth, int distFromRoot, int alpha, int beta);
-/*endtemplate*/
-
-
-/*template<turn: WHITE | BLACK>*/
-int quiescense(Board *board, int alpha, int beta, int d);
-/*endtemplate*/
-
+#ifdef USE_ASSERTS
+#define ASSERT(expr, msg) if (!(expr)) printf("\e[1;31mAssert failed at %s %d: %s\e[0m\n", __FILE__, __LINE__, msg);
+#else
+#define ASSERT(expr, msg);
+#endif
 #endif

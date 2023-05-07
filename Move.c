@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "Move.h"
+#include "Zobrist.h"
 
 const Piece promotionLookupsWhite[16] = {
     PIECE_NONE, PIECE_NONE, PIECE_NONE, PIECE_NONE, PIECE_NONE, PIECE_NONE, PIECE_NONE, PIECE_NONE, //0-7
@@ -40,14 +41,21 @@ void mv_init(void) {
     for (int square = 0; square < 64; square ++) {
         uint16_t revokedRights = 0;
 
-        if(square == 0) revokedRights |= WHITE_CASTLE_QUEENSIDE_RIGHT;
-        if(square == 7) revokedRights |= WHITE_CASTLE_KINGSIDE_RIGHT;
-        if(square == 56) revokedRights |= BLACK_CASTLE_QUEENSIDE_RIGHT;
-        if(square == 63) revokedRights |= BLACK_CASTLE_KINGSIDE_RIGHT;
-        if(square == 4) revokedRights |= (WHITE_CASTLE_KINGSIDE_RIGHT | WHITE_CASTLE_QUEENSIDE_RIGHT);
-        if(square == 60) revokedRights |= (BLACK_CASTLE_KINGSIDE_RIGHT | BLACK_CASTLE_QUEENSIDE_RIGHT);
+        if(square == 0) 
+            revokedRights |= WHITE_CASTLE_QUEENSIDE_RIGHT;
+        else if(square == 7) 
+            revokedRights |= WHITE_CASTLE_KINGSIDE_RIGHT;
+        else if(square == 56) 
+            revokedRights |= BLACK_CASTLE_QUEENSIDE_RIGHT;
+        else if(square == 63) 
+            revokedRights |= BLACK_CASTLE_KINGSIDE_RIGHT;
+        else if(square == 4) 
+            revokedRights |= WHITE_CASTLE_KINGSIDE_RIGHT | WHITE_CASTLE_QUEENSIDE_RIGHT;
+        else if(square == 60) 
+            revokedRights |= BLACK_CASTLE_KINGSIDE_RIGHT | BLACK_CASTLE_QUEENSIDE_RIGHT;
 
         castleRightMasks[square] = ~revokedRights;
+        
     }
 }
 

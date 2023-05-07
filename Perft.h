@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define PERFT_H
 
+#include "Tests.h"
 #include "Board.h"
 #include "Move.h"
 #include "Movegen.h"

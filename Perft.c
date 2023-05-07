@@ -31,22 +31,21 @@ unsigned long micros(void) {
 long r_perft(Board *board, int depth, int originalDepth) {
     Move moves[MG_MAX_MOVES];
 
+    ASSERT(z_getKey(board) == board->zobrist, "Zobrist key doesn't match");
+
     /*use<mg_gen>*/
     /*set<turn: turn$, genType: ALL>*/
     int movec = mg_gen(board, moves);
-    
-    
+
     movesGenerated += movec;
 
-    if (depth < 1 && depth != originalDepth) 
+    if (depth == 1) 
         return movec;
-    int capc = 0;
+
     long numPositions = 0;
 
     for (int i = 0; i < movec; i ++) {
         MoveResult result = MOVE_RESULT(moves[i], board);
-        if (result.captured != PIECE_NONE || MOVE_SPECIAL(result.move) == EP_CAPTURE)
-            capc ++;
 
         /*use<mv_make>*/
         /*set<turn: turn$>*/

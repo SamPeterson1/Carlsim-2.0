@@ -30,7 +30,6 @@ void fen_load(Board *board, char *fen) {
             file = 0;
         } else if(fen[i] > 64) {
             Piece piece = pc_parse(fen[i]);
-            printf("Adding piece: %c %c\n", fen[i], pc_toChar(piece));
             bd_addPiece(board, piece, rank * 8 + file);
             file ++;
         } else {
@@ -59,7 +58,6 @@ void fen_load(Board *board, char *fen) {
     i++;
 
     if(fen[i] != '-') {
-        printf("Ep file: %d\n", fen[i] - 97);
         SET_EP_FILE(board, fen[i] - 97);
         i++;
     }
